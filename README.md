@@ -311,7 +311,7 @@ npm run preview  # preview built app
 npm run lint     # run ESLint
 ```
 
-## Current Scope
+## Current Scope And Future Enhancements
 
 CodeArena is a strong MVP. It covers the complete management flow for contests, problems, users, submissions, and rankings.
 
@@ -324,6 +324,7 @@ What it does not yet include:
 - Production deployment configuration
 
 The current submission flow stores code and score, which is suitable for demonstration, architecture review, and academic/project evaluation.
+In Future we believe to fix and add new features to the platform.
 
 ## Why This Project Stands Out
 

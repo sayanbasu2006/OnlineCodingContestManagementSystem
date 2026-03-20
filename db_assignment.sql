@@ -390,7 +390,7 @@ BEGIN
     WHERE contest_id = NEW.contest_id;
     
     -- Exception: block late submissions
-    IF NEW.submission_time > contestEndTime THEN
+    IF NOW() > contestEndTime THEN
         SIGNAL SQLSTATE '45000' 
         SET MESSAGE_TEXT = 'Exception: Cannot submit code after contest end time.';
     END IF;

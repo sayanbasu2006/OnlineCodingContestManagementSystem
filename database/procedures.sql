@@ -1,4 +1,4 @@
-USE \`codearena\`;
+USE codearena;
 
 DELIMITER //
 

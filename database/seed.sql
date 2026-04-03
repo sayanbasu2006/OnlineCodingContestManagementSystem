@@ -1,4 +1,4 @@
-USE \`codearena\`;
+USE `codearena`;
 
 SET FOREIGN_KEY_CHECKS = 0;
 TRUNCATE TABLE submissions;

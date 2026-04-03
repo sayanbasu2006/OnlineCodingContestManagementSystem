@@ -2,9 +2,8 @@
 
 [![React](https://img.shields.io/badge/Frontend-React%2019-61dafb?style=for-the-badge&logo=react&logoColor=white)](frontend/package.json)
 [![Vite](https://img.shields.io/badge/Build-Vite-646cff?style=for-the-badge&logo=vite&logoColor=white)](frontend/package.json)
-[![Node.js](https://img.shields.io/badge/Backend-Node.js%20%2B%20Express-3c873a?style=for-the-badge&logo=node.js&logoColor=white)](backend/package.json)
+[![Python](https://img.shields.io/badge/Backend-Python%2F%20Flask-3776ab?style=for-the-badge&logo=python&logoColor=white)](backend/app.py)
 [![MySQL](https://img.shields.io/badge/Database-MySQL-00758f?style=for-the-badge&logo=mysql&logoColor=white)](database/schema.sql)
-[![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178c6?style=for-the-badge&logo=typescript&logoColor=white)](backend/tsconfig.json)
 
 CodeArena is a full-stack online coding contest platform for managing programming contests, problems, participation, submissions, and live rankings.
 
@@ -22,29 +21,30 @@ CodeArena is a full-stack online coding contest platform for managing programmin
 | Layer | Stack |
 | --- | --- |
 | Frontend | React 19, Vite, React Router, TypeScript |
-| Backend | Node.js, Express, TypeScript |
+| Backend | Python, Flask, Flask-CORS |
 | Database | MySQL |
-| Auth | JWT, bcryptjs |
+| Auth | JWT (PyJWT), bcrypt |
 
 ## Project Structure
 
 ```
 CodeArena/
 ├── backend/
-│   ├── src/
-│   │   ├── config/db.ts
-│   │   ├── middleware/authMiddleware.ts
-│   │   ├── routes/
-│   │   │   ├── authRoutes.ts
-│   │   │   ├── contestRoutes.ts
-│   │   │   ├── problemRoutes.ts
-│   │   │   ├── submissionRoutes.ts
-│   │   │   ├── leaderboardRoutes.ts
-│   │   │   ├── dashboardRoutes.ts
-│   │   │   └── userRoutes.ts
-│   │   └── server.ts
-│   ├── database.js
-│   └── seed.js
+│   ├── app.py                    # Flask entry point
+│   ├── config/
+│   │   └── db.py                 # MySQL pool & DB init
+│   ├── middleware/
+│   │   └── auth.py               # JWT protect & admin decorators
+│   ├── routes/
+│   │   ├── auth_routes.py
+│   │   ├── user_routes.py
+│   │   ├── contest_routes.py
+│   │   ├── problem_routes.py
+│   │   ├── submission_routes.py
+│   │   ├── leaderboard_routes.py
+│   │   └── dashboard_routes.py
+│   ├── requirements.txt
+│   └── .env.example
 ├── database/
 │   ├── schema.sql
 │   └── seed.sql
@@ -53,9 +53,11 @@ CodeArena/
 │       ├── api/api.ts
 │       ├── pages/
 │       │   ├── Contests.tsx
+│       │   ├── ContestDetail.tsx
 │       │   ├── Dashboard.tsx
 │       │   ├── Leaderboard.tsx
 │       │   ├── Login.tsx
+│       │   ├── MySubmissions.tsx
 │       │   ├── ProblemDetails.tsx
 │       │   ├── Problems.tsx
 │       │   ├── Register.tsx
@@ -70,14 +72,15 @@ CodeArena/
 
 ### Prerequisites
 
-- Node.js 18+
+- Python 3.10+
 - MySQL Server running locally
+- Node.js 18+ (for the frontend)
 
 ### 1. Clone and configure
 
 ```bash
 git clone <your-repo-url>
-cd OnlineCodingContest
+cd OnlineCodingContestManagementSystem
 ```
 
 Create `backend/.env`:
@@ -90,31 +93,58 @@ JWT_SECRET=your_super_secret_jwt_key
 PORT=5001
 ```
 
-### 2. Install and run
+### 2. Install and run the backend
 
 ```bash
-# Backend
 cd backend
-npm install
-npm run dev
+python3 -m venv ../.venv
+source ../.venv/bin/activate
+pip install -r requirements.txt
+python app.py
+```
 
-# Frontend (separate terminal)
+### 3. Install and run the frontend (separate terminal)
+
+```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-### 3. Seed sample data
+Note: if you use the VS Code task `frontend:dev`, make sure the task runs inside the `frontend/` directory. Running `npm run dev` from the project root will fail because there is no root-level `package.json`.
+
+### 4. Seed sample data
 
 ```bash
-cd backend
-npm run seed
+mysql -u root -p < database/schema.sql
+mysql -u root -p < database/seed.sql
 ```
 
-### 4. Open the app
+### 5. Open the app
 
 - Frontend: `http://localhost:5173`
 - Backend API: `http://localhost:5001`
+
+## Verified Local Run (3 April 2026)
+
+The backend and frontend were connected and started successfully with:
+
+```bash
+# Terminal 1
+cd backend
+source ../.venv/bin/activate
+python app.py
+
+# Terminal 2
+cd frontend
+npm run dev
+```
+
+Compatibility notes for the current API/frontend integration:
+
+- `GET /api/dashboard/stats` includes both `total*` keys and frontend keys: `users_count`, `contests_count`, `submissions_count`.
+- `GET /api/leaderboard/` returns `{ "leaderboard": [...] }`.
+- `POST /api/submissions/` accepts frontend payload without `contest_id` and infers a contest from problem mappings.
 
 ## Demo Accounts
 

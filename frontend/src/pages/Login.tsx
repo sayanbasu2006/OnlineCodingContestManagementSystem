@@ -1,85 +1,78 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { loginUser } from "../api/api";
-import { useAuth } from "../App";
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { LogIn } from 'lucide-react';
+import api from '../api/api';
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setError('');
     setLoading(true);
 
     try {
-      const data = await loginUser(email, password);
-      login(
-        {
-          user_id: data.user_id,
-          username: data.username,
-          email: data.email,
-          role: data.role,
-        },
-        data.token
-      );
-      navigate("/");
+      const response = await api.post('/auth/login', { email, password });
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify({
+          user_id: response.data.user_id,
+          username: response.data.username,
+          email: response.data.email,
+          role: response.data.role
+        }));
+        navigate('/dashboard');
+      }
     } catch (err: any) {
-      setError(err.message || "Login failed");
+      setError(err.response?.data?.error || 'Login failed. Please check credentials.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <div className="auth-header">
-          <h1>CodeArena</h1>
-          <p>Sign in to your account</p>
+    <div className="container" style={{ maxWidth: '400px', marginTop: '10vh' }}>
+      <div className="card">
+        <div className="card-header text-center">
+          <h2>Welcome Back</h2>
+          <p>Login to your CodeArena account</p>
         </div>
-
-        <form onSubmit={handleSubmit} className="auth-form">
-          {error && <div className="error-message">{error}</div>}
-
+        {error && <div style={{ color: 'var(--danger)', marginBottom: '1rem', textAlign: 'center', background: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem', borderRadius: '8px' }}>{error}</div>}
+        <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
+            <label className="form-label">Email Address</label>
+            <input 
+              type="email" 
+              className="form-input" 
+              placeholder="you@example.com" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              required
+              required 
             />
           </div>
-
           <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
+            <label className="form-label">Password</label>
+            <input 
+              type="password" 
+              className="form-input" 
+              placeholder="••••••••" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              required
+              required 
             />
           </div>
-
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? "Signing in..." : "Sign In"}
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', padding: '0.8rem' }} disabled={loading}>
+            <LogIn size={20} />
+            {loading ? 'Logging in...' : 'Sign In'}
           </button>
         </form>
-
-        <div className="auth-footer">
-          <p>
-            Don't have an account? <Link to="/register">Sign up</Link>
-          </p>
-        </div>
+        <p className="text-center" style={{ marginTop: '1.5rem', fontSize: '0.9rem' }}>
+          Don't have an account? <Link to="/register">Create one</Link>
+        </p>
       </div>
     </div>
   );

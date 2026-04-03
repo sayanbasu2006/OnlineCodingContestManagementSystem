@@ -1,73 +1,52 @@
-import { useState, useEffect } from "react";
-import { fetchLeaderboard } from "../api/api";
-import { useAuth } from "../App";
-
-interface LeaderboardEntry {
-  rank: number;
-  user_id: number;
-  username: string;
-  total_score: number;
-  submissions: number;
-}
-
-const rankEmoji = (rank: number) => {
-  if (rank === 1) return "🥇";
-  if (rank === 2) return "🥈";
-  if (rank === 3) return "🥉";
-  return `#${rank}`;
-};
+import React, { useEffect, useState } from 'react';
+import api from '../api/api';
+import { Medal } from 'lucide-react';
 
 export default function Leaderboard() {
-  const { user } = useAuth();
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaders, setLeaders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchLeaderboard()
-      .then(setLeaderboard)
-      .catch(() => setLeaderboard([]))
-      .finally(() => setLoading(false));
+    const fetchLeaderboard = async () => {
+      try {
+        const res = await api.get('/leaderboard');
+        setLeaders(res.data.leaderboard);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLeaderboard();
   }, []);
 
-  if (loading) return <div className="skeleton-block" />;
+  if (loading) return <div className="container page-wrapper">Loading leaderboard...</div>;
 
   return (
-    <div>
-      <h2>🏆 Global Leaderboard</h2>
-      <div className="table-wrap">
-        <table>
+    <div className="container page-wrapper">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '2rem' }}>
+        <Medal size={32} color="var(--warning)" />
+        <h2 style={{ margin: 0 }}>Global Leaderboard</h2>
+      </div>
+
+      <div className="table-wrapper">
+        <table className="table">
           <thead>
             <tr>
               <th>Rank</th>
-              <th>User</th>
-              <th>Score</th>
-              <th>Submissions</th>
+              <th>Username</th>
+              <th>Total Score</th>
             </tr>
           </thead>
           <tbody>
-            {leaderboard.length === 0 ? (
-              <tr><td colSpan={4}>No submissions yet.</td></tr>
-            ) : (
-              leaderboard.map((entry) => (
-                <tr
-                  key={entry.user_id}
-                  className={`${entry.rank <= 3 ? "top-rank" : ""} ${entry.user_id === user?.user_id ? "current-user-row" : ""}`}
-                >
-                  <td>
-                    <span className={`rank-cell ${entry.rank <= 3 ? `rank-${entry.rank}` : ""}`}>
-                      {rankEmoji(entry.rank)}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="leaderboard-user">
-                      {entry.username}
-                      {entry.user_id === user?.user_id && <span className="you-badge">You</span>}
-                    </span>
-                  </td>
-                  <td className="green">{entry.total_score}</td>
-                  <td>{entry.submissions}</td>
-                </tr>
-              ))
+            {leaders.length > 0 ? leaders.map((leader, index) => (
+              <tr key={leader.user_id}>
+                <td style={{ fontWeight: 'bold', color: index < 3 ? 'var(--warning)' : 'inherit' }}>#{index + 1}</td>
+                <td>{leader.username}</td>
+                <td style={{ fontWeight: 'bold' }}>{leader.total_score}</td>
+              </tr>
+            )) : (
+              <tr><td colSpan={3} className="text-center">No scores yet.</td></tr>
             )}
           </tbody>
         </table>

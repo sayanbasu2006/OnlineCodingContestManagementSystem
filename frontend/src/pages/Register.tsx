@@ -1,122 +1,83 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { registerUser } from "../api/api";
-import { useAuth } from "../App";
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { UserPlus } from 'lucide-react';
+import api from '../api/api';
 
 export default function Register() {
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return;
-    }
-
+    setError('');
     setLoading(true);
 
     try {
-      const data = await registerUser(username, email, password);
-      login(
-        {
-          user_id: data.user_id,
-          username: data.username,
-          email: data.email,
-          role: data.role,
-        },
-        data.token
-      );
-      navigate("/");
+      await api.post('/auth/register', { username, email, password });
+      // If successful, navigate to login
+      navigate('/login');
     } catch (err: any) {
-      setError(err.message || "Registration failed");
+      setError(err.response?.data?.error || 'Registration failed. Try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <div className="auth-header">
-          <h1>CodeArena</h1>
-          <p>Create your account</p>
+    <div className="container" style={{ maxWidth: '400px', marginTop: '10vh' }}>
+      <div className="card">
+        <div className="card-header text-center">
+          <h2>Create Account</h2>
+          <p>Join CodeArena today</p>
         </div>
-
-        <form onSubmit={handleSubmit} className="auth-form">
-          {error && <div className="error-message">{error}</div>}
-
+        {error && <div style={{ color: 'var(--danger)', marginBottom: '1rem', textAlign: 'center', background: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem', borderRadius: '8px' }}>{error}</div>}
+        <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="username">Username</label>
-            <input
-              type="text"
-              id="username"
+            <label className="form-label">Username</label>
+            <input 
+              type="text" 
+              className="form-input" 
+              placeholder="johndoe" 
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Choose a username"
-              required
+              required 
             />
           </div>
-
           <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
+            <label className="form-label">Email Address</label>
+            <input 
+              type="email" 
+              className="form-input" 
+              placeholder="you@example.com" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              required
+              required 
             />
           </div>
-
           <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
+            <label className="form-label">Password</label>
+            <input 
+              type="password" 
+              className="form-input" 
+              placeholder="••••••••" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Create a password"
-              required
+              required 
+              minLength={6}
             />
           </div>
-
-          <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
-            <input
-              type="password"
-              id="confirmPassword"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm your password"
-              required
-            />
-          </div>
-
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? "Creating account..." : "Sign Up"}
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', padding: '0.8rem' }} disabled={loading}>
+            <UserPlus size={20} />
+            {loading ? 'Registering...' : 'Sign Up'}
           </button>
         </form>
-
-        <div className="auth-footer">
-          <p>
-            Already have an account? <Link to="/login">Sign in</Link>
-          </p>
-        </div>
+        <p className="text-center" style={{ marginTop: '1.5rem', fontSize: '0.9rem' }}>
+          Already have an account? <Link to="/login">Sign in</Link>
+        </p>
       </div>
     </div>
   );

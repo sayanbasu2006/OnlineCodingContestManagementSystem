@@ -1,188 +1,74 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { fetchDashboardStats, fetchContests, fetchSubmissions, fetchParticipations } from "../api/api";
-import { useAuth } from "../App";
-
-interface DashboardStats {
-  totalContests: number;
-  totalProblems: number;
-  totalSubmissions: number;
-  totalUsers: number;
-}
-
-interface Contest {
-  contest_id: number;
-  title: string;
-  status: string;
-  end_time: string;
-  start_time: string;
-}
-
-interface Submission {
-  submission_id: number;
-  problem_title: string;
-  contest_title: string;
-  score: number;
-  language: string;
-  submission_time: string;
-}
-
-function TimeLeft({ endTime }: { endTime: string }) {
-  const [text, setText] = useState("");
-
-  useEffect(() => {
-    const update = () => {
-      const diff = new Date(endTime).getTime() - Date.now();
-      if (diff <= 0) { setText("Ended"); return; }
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      if (h > 24) {
-        setText(`${Math.floor(h / 24)}d ${h % 24}h left`);
-      } else {
-        setText(`${h}h ${m}m left`);
-      }
-    };
-    update();
-    const id = setInterval(update, 60000);
-    return () => clearInterval(id);
-  }, [endTime]);
-
-  return <span className="countdown-inline">{text}</span>;
-}
+import React, { useEffect, useState } from 'react';
+import api from '../api/api';
+import { Activity, Trophy, Code2 } from 'lucide-react';
 
 export default function Dashboard() {
-  const { user, isAuthenticated } = useAuth();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [contests, setContests] = useState<Contest[]>([]);
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  
+  let user: any = {};
+  try {
+    const userStr = localStorage.getItem('user');
+    user = userStr && userStr !== 'undefined' ? JSON.parse(userStr) : {};
+  } catch (e) {}
 
   useEffect(() => {
-    const promises: Promise<any>[] = [
-      fetchDashboardStats(),
-      fetchContests(),
-    ];
+    const fetchStats = async () => {
+      try {
+        const res = await api.get('/dashboard/stats');
+        setStats(res.data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
 
-    if (isAuthenticated && user) {
-      promises.push(fetchSubmissions({ user_id: user.user_id }));
-    }
-
-    Promise.all(promises)
-      .then(([statsData, contestsData, subsData]) => {
-        setStats(statsData);
-        setContests(contestsData);
-        if (subsData) setSubmissions(subsData.slice(0, 5));
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [isAuthenticated, user]);
-
-  if (loading) return <div className="skeleton-block" />;
-  if (!stats) return <p>Failed to load dashboard.</p>;
-
-  const ongoingContests = contests.filter((c) => c.status === "ONGOING");
-  const upcomingContests = contests.filter((c) => c.status === "UPCOMING");
+  if (loading) return <div className="container" style={{ marginTop: '2rem' }}>Loading dashboard...</div>;
 
   return (
-    <div className="dashboard">
-      <div className="welcome-section">
-        <h1>
-          {isAuthenticated ? `Welcome back, ${user?.username}` : "Welcome to CodeArena"} 👋
-        </h1>
-        <p>{isAuthenticated ? "Ready for your next challenge?" : "Sign in to start competing."}</p>
-      </div>
+    <div className="container" style={{ marginTop: '2rem' }}>
+      <h2 style={{ marginBottom: '0.5rem' }}>Dashboard</h2>
+      <p style={{ marginBottom: '2rem', color: 'var(--text-muted)' }}>Welcome back, {user.username} ({user.role})</p>
 
-      <div className="stats-grid">
-        <div className="stat-card">
-          <span className="stat-icon">🏆</span>
-          <div className="stat-info">
-            <span className="stat-value">{stats.totalContests}</span>
-            <span className="stat-label">Contests</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <span className="stat-icon">📝</span>
-          <div className="stat-info">
-            <span className="stat-value">{stats.totalProblems}</span>
-            <span className="stat-label">Problems</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <span className="stat-icon">🚀</span>
-          <div className="stat-info">
-            <span className="stat-value">{stats.totalSubmissions}</span>
-            <span className="stat-label">Submissions</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <span className="stat-icon">👥</span>
-          <div className="stat-info">
-            <span className="stat-value">{stats.totalUsers}</span>
-            <span className="stat-label">Users</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="dashboard-grid">
-        {/* Active & Upcoming Contests */}
-        <div className="dashboard-section">
-          <div className="section-header">
-            <h2>🔥 Active Contests</h2>
-            <Link to="/contests" className="section-link">View all →</Link>
-          </div>
-          {ongoingContests.length === 0 && upcomingContests.length === 0 ? (
-            <p className="empty-text">No active contests right now.</p>
-          ) : (
-            <div className="mini-contest-list">
-              {ongoingContests.map((c) => (
-                <Link to={`/contests/${c.contest_id}`} key={c.contest_id} className="mini-contest-card">
-                  <div className="mini-contest-info">
-                    <span className="status-badge badge-ongoing">LIVE</span>
-                    <span className="mini-contest-title">{c.title}</span>
-                  </div>
-                  <TimeLeft endTime={c.end_time} />
-                </Link>
-              ))}
-              {upcomingContests.map((c) => (
-                <Link to={`/contests/${c.contest_id}`} key={c.contest_id} className="mini-contest-card">
-                  <div className="mini-contest-info">
-                    <span className="status-badge badge-upcoming">UPCOMING</span>
-                    <span className="mini-contest-title">{c.title}</span>
-                  </div>
-                  <TimeLeft endTime={c.start_time} />
-                </Link>
-              ))}
+      {stats && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+          <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ background: 'rgba(99, 102, 241, 0.2)', padding: '1rem', borderRadius: '50%' }}>
+              <Activity color="var(--primary)" size={24} />
             </div>
-          )}
-        </div>
-
-        {/* Recent Submissions */}
-        {isAuthenticated && (
-          <div className="dashboard-section">
-            <div className="section-header">
-              <h2>📋 Recent Submissions</h2>
-              <Link to="/submissions" className="section-link">View all →</Link>
+            <div>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.users_count}</div>
+              <div style={{ color: 'var(--text-muted)' }}>Active Users</div>
             </div>
-            {submissions.length === 0 ? (
-              <p className="empty-text">No submissions yet. <Link to="/contests">Join a contest</Link> to get started!</p>
-            ) : (
-              <div className="submissions-mini-list">
-                {submissions.map((s) => (
-                  <div key={s.submission_id} className="submission-mini-row">
-                    <div className="submission-mini-info">
-                      <span className="submission-problem">{s.problem_title}</span>
-                      <span className="submission-contest">{s.contest_title}</span>
-                    </div>
-                    <div className="submission-mini-meta">
-                      <span className="submission-lang">{s.language}</span>
-                      <span className={`submission-score ${s.score > 0 ? "green" : ""}`}>{s.score} pts</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
-        )}
+          
+          <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ background: 'rgba(34, 211, 238, 0.2)', padding: '1rem', borderRadius: '50%' }}>
+              <Trophy color="var(--accent)" size={24} />
+            </div>
+            <div>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.contests_count}</div>
+              <div style={{ color: 'var(--text-muted)' }}>Contests Hosted</div>
+            </div>
+          </div>
+
+          <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ background: 'rgba(16, 185, 129, 0.2)', padding: '1rem', borderRadius: '50%' }}>
+              <Code2 color="var(--success)" size={24} />
+            </div>
+            <div>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.submissions_count}</div>
+              <div style={{ color: 'var(--text-muted)' }}>Total Submissions</div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      <div style={{ marginTop: '2rem' }}>
+        <a href="/my-submissions" className="btn btn-primary">View My Submissions</a>
       </div>
     </div>
   );

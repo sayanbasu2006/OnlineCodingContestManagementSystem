@@ -2,21 +2,24 @@ const mysql = require('mysql2/promise');
 import dotenv from 'dotenv';
 dotenv.config();
 
+// Railway MySQL plugin provides MYSQLHOST, MYSQLUSER, MYSQLPASSWORD, MYSQLDATABASE, MYSQLPORT
+// Fallback to DB_HOST, DB_USER, DB_PASSWORD for local development
 const DB_CONFIG = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
+  host: process.env.MYSQLHOST || process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.MYSQLPORT || '3306'),
+  user: process.env.MYSQLUSER || process.env.DB_USER || 'root',
+  password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || '',
   multipleStatements: true,
 };
 
+const DB_NAME = process.env.MYSQLDATABASE || 'codearena';
+
 const pool = mysql.createPool({
   ...DB_CONFIG,
-  database: 'codearena',
+  database: DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
 });
-
-const DB_NAME = 'codearena';
 
 async function initializeDatabase() {
   let connection;

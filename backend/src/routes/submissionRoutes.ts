@@ -44,30 +44,6 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     }
 });
 
-// Run code directly (Playground)
-router.post('/run', async (req: Request, res: Response): Promise<void> => {
-    try {
-        const { code, language, input } = req.body;
-        if (!code) { res.status(400).json({ error: 'Code is required' }); return; }
-
-        // Simulating code execution delay
-        await new Promise(r => setTimeout(r, 800 + Math.random() * 500));
-        
-        const isError = Math.random() > 0.85; // 15% chance of error
-        if (isError) {
-            res.json({ output: "", error: "SyntaxError: Unexpected token or compilation error.", status: "Error" });
-        } else {
-            res.json({ 
-                output: `Code executed successfully in ${language}.\n\nProvided Input:\n${input || '(None)'}\n\nStandard Output:\nHello, CodeArena Playground!`, 
-                error: null, 
-                status: "Success" 
-            });
-        }
-    } catch (err: any) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
 // Submit a solution
 router.post('/', protect, async (req: AuthRequest, res: Response): Promise<void> => {
     try {

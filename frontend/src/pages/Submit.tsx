@@ -235,7 +235,7 @@ export default function Submit() {
               onChange={(e) => setSelectedContest(parseInt(e.target.value))}
               required
             >
-              <option value={0}>Practice Area (No Contest)</option>
+              <option value={0}>General Practice (No Contest)</option>
               {contests.map((c) => (
                 <option key={c.contest_id} value={c.contest_id}>
                   {c.title}
@@ -255,7 +255,7 @@ export default function Submit() {
             >
               <option value={0}>
                 {selectedContest === null
-                  ? "Select a contest or practice area"
+                  ? "Select a contest or practice mode"
                   : loadingProblems
                     ? "Loading problems..."
                     : "Select a problem"}

@@ -1,5 +1,18 @@
-node_modules/
+# Environment files - NEVER commit these
 .env
+.env.local
+.env.production
+
+# Node
+node_modules/
+
+# Build outputs
 dist/
 build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
 .DS_Store

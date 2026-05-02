@@ -5,20 +5,73 @@ const { pool } = require('../config/db');
 
 const router = express.Router();
 
-// List all contests
+// Get active contest participation for logged in user
+// NOTE: This route MUST be before /:id to avoid Express matching "me" as an :id parameter
+router.get('/me/active-participation', protect, async (req: any, res: Response): Promise<void> => {
+    try {
+        const user_id = req.user?.user_id;
+        const [rows]: any = await pool.execute(
+            `SELECT p.*, c.duration_minutes 
+             FROM participations p 
+             JOIN contests c ON p.contest_id = c.contest_id 
+             WHERE p.user_id = ? AND p.status = 'STARTED'`,
+            [user_id]
+        );
+        
+        if (rows.length === 0) {
+            res.json({ active_contest_id: null });
+            return;
+        }
+
+        const active = rows[0];
+        // Check if expired
+        const start = new Date(active.start_time).getTime();
+        const now = Date.now();
+        const durationMs = active.duration_minutes * 60000;
+
+        if (now - start > durationMs) {
+            // Auto finish expired contest
+            await pool.execute('UPDATE participations SET status = "FINISHED" WHERE participation_id = ?', [active.participation_id]);
+            res.json({ active_contest_id: null });
+        } else {
+            res.json({ 
+                active_contest_id: active.contest_id,
+                start_time: active.start_time,
+                duration_minutes: active.duration_minutes
+            });
+        }
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// List all contests (with participant count)
 router.get('/', async (req: Request, res: Response): Promise<void> => {
     try {
-        const [rows]: any = await pool.execute('SELECT * FROM contests ORDER BY start_time DESC');
+        const [rows]: any = await pool.execute(
+            `SELECT c.*, COUNT(p.participation_id) AS participant_count
+             FROM contests c
+             LEFT JOIN participations p ON c.contest_id = p.contest_id
+             GROUP BY c.contest_id
+             ORDER BY c.start_time DESC`
+        );
         res.json(rows);
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// Get contest by ID
+// Get contest by ID (with participant count)
 router.get('/:id', async (req: Request, res: Response): Promise<void> => {
     try {
-        const [rows]: any = await pool.execute('SELECT * FROM contests WHERE contest_id = ?', [req.params.id]);
+        const [rows]: any = await pool.execute(
+            `SELECT c.*, COUNT(p.participation_id) AS participant_count
+             FROM contests c
+             LEFT JOIN participations p ON c.contest_id = p.contest_id
+             WHERE c.contest_id = ?
+             GROUP BY c.contest_id`,
+            [req.params.id]
+        );
         if (rows.length === 0) { res.status(404).json({ error: 'Contest not found' }); return; }
         res.json(rows[0]);
     } catch (err: any) {
@@ -119,45 +172,6 @@ router.delete('/:id/problems/:problemId', protect, admin, async (req: Request, r
         );
         if (result.affectedRows === 0) { res.status(404).json({ error: 'Problem not found in this contest' }); return; }
         res.json({ message: 'Problem removed from contest successfully' });
-    } catch (err: any) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Get active contest participation for logged in user
-router.get('/me/active-participation', protect, async (req: any, res: Response): Promise<void> => {
-    try {
-        const user_id = req.user?.user_id;
-        const [rows]: any = await pool.execute(
-            `SELECT p.*, c.duration_minutes 
-             FROM participations p 
-             JOIN contests c ON p.contest_id = c.contest_id 
-             WHERE p.user_id = ? AND p.status = 'STARTED'`,
-            [user_id]
-        );
-        
-        if (rows.length === 0) {
-            res.json({ active_contest_id: null });
-            return;
-        }
-
-        const active = rows[0];
-        // Check if expired
-        const start = new Date(active.start_time).getTime();
-        const now = Date.now();
-        const durationMs = active.duration_minutes * 60000;
-
-        if (now - start > durationMs) {
-            // Auto finish expired contest
-            await pool.execute('UPDATE participations SET status = "FINISHED" WHERE participation_id = ?', [active.participation_id]);
-            res.json({ active_contest_id: null });
-        } else {
-            res.json({ 
-                active_contest_id: active.contest_id,
-                start_time: active.start_time,
-                duration_minutes: active.duration_minutes
-            });
-        }
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }

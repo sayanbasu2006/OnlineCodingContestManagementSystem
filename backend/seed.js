@@ -53,7 +53,7 @@ async function seed() {
 
     // Clear tables
     await connection.execute('SET FOREIGN_KEY_CHECKS = 0');
-    const tables = ['submissions', 'participations', 'contest_problems', 'problems', 'contests', 'users'];
+    const tables = ['track_problems', 'learning_tracks', 'user_badges', 'submissions', 'participations', 'contest_problems', 'test_cases', 'problem_tags', 'notifications', 'problems', 'contests', 'users'];
     for (const t of tables) {
       await connection.execute(`TRUNCATE TABLE ${t}`);
     }
@@ -92,22 +92,22 @@ async function seed() {
 
     // ── Problems (10 problems) ──
     const problems = [
-      ['Two Sum', 'Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.\n\nYou may assume that each input would have exactly one solution, and you may not use the same element twice.\n\nExample:\nInput: nums = [2,7,11,15], target = 9\nOutput: [0,1]\nExplanation: Because nums[0] + nums[1] == 9, we return [0, 1].', 'EASY', 100],
-      ['Reverse String', 'Write a function that reverses a string. The input string is given as an array of characters s.\n\nYou must do this by modifying the input array in-place with O(1) extra memory.\n\nExample:\nInput: s = ["h","e","l","l","o"]\nOutput: ["o","l","l","e","h"]', 'EASY', 100],
-      ['Palindrome Number', 'Given an integer x, return true if x is a palindrome, and false otherwise.\n\nAn integer is a palindrome when it reads the same forward and backward.\n\nExample:\nInput: x = 121\nOutput: true\nExplanation: 121 reads as 121 from left to right and from right to left.', 'EASY', 100],
-      ['Longest Substring Without Repeating Characters', 'Given a string s, find the length of the longest substring without repeating characters.\n\nExample:\nInput: s = "abcabcbb"\nOutput: 3\nExplanation: The answer is "abc", with the length of 3.', 'MEDIUM', 200],
-      ['Merge Intervals', 'Given an array of intervals where intervals[i] = [start_i, end_i], merge all overlapping intervals, and return an array of the non-overlapping intervals.\n\nExample:\nInput: intervals = [[1,3],[2,6],[8,10],[15,18]]\nOutput: [[1,6],[8,10],[15,18]]', 'MEDIUM', 200],
+      ['Two Sum', 'Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.\n\nYou may assume that each input would have exactly one solution, and you may not use the same element twice.\n\nExample:\nInput: nums = [2,7,11,15], target = 9\nOutput: [0,1]\nExplanation: Because nums[0] + nums[1] == 9, we return [0, 1].', 'EASY', 100, '### Intuition\nUse a hash map to store the elements and their indices. For each element `nums[i]`, check if `target - nums[i]` exists in the map.\n\n### Complexity\n- **Time:** O(N)\n- **Space:** O(N)'],
+      ['Reverse String', 'Write a function that reverses a string. The input string is given as an array of characters s.\n\nYou must do this by modifying the input array in-place with O(1) extra memory.\n\nExample:\nInput: s = ["h","e","l","l","o"]\nOutput: ["o","l","l","e","h"]', 'EASY', 100, '### Intuition\nUse two pointers, one at the beginning and one at the end of the string. Swap the characters and move the pointers towards the center.\n\n### Complexity\n- **Time:** O(N)\n- **Space:** O(1)'],
+      ['Palindrome Number', 'Given an integer x, return true if x is a palindrome, and false otherwise.\n\nAn integer is a palindrome when it reads the same forward and backward.\n\nExample:\nInput: x = 121\nOutput: true\nExplanation: 121 reads as 121 from left to right and from right to left.', 'EASY', 100, null],
+      ['Longest Substring Without Repeating Characters', 'Given a string s, find the length of the longest substring without repeating characters.\n\nExample:\nInput: s = "abcabcbb"\nOutput: 3\nExplanation: The answer is "abc", with the length of 3.', 'MEDIUM', 200, null],
+      ['Merge Intervals', 'Given an array of intervals where intervals[i] = [start_i, end_i], merge all overlapping intervals, and return an array of the non-overlapping intervals.\n\nExample:\nInput: intervals = [[1,3],[2,6],[8,10],[15,18]]\nOutput: [[1,6],[8,10],[15,18]]', 'MEDIUM', 200, null],
       ['Binary Tree Level Order Traversal', 'Given the root of a binary tree, return the level order traversal of its nodes values (i.e., from left to right, level by level).\n\nExample:\nInput: root = [3,9,20,null,null,15,7]\nOutput: [[3],[9,20],[15,7]]', 'MEDIUM', 200],
-      ['Container With Most Water', 'You are given an integer array height of length n. There are n vertical lines drawn such that the two endpoints of the ith line are (i, 0) and (i, height[i]).\n\nFind two lines that together with the x-axis form a container, such that the container contains the most water.\n\nReturn the maximum amount of water a container can store.', 'MEDIUM', 200],
-      ['Median of Two Sorted Arrays', 'Given two sorted arrays nums1 and nums2 of size m and n respectively, return the median of the two sorted arrays.\n\nThe overall run time complexity should be O(log (m+n)).\n\nExample:\nInput: nums1 = [1,3], nums2 = [2]\nOutput: 2.0', 'HARD', 300],
-      ['Trapping Rain Water', 'Given n non-negative integers representing an elevation map where the width of each bar is 1, compute how much water it can trap after raining.\n\nExample:\nInput: height = [0,1,0,2,1,0,1,3,2,1,2,1]\nOutput: 6', 'HARD', 300],
-      ['Regular Expression Matching', 'Given an input string s and a pattern p, implement regular expression matching with support for . and * where:\n\n. Matches any single character.\n* Matches zero or more of the preceding element.\n\nThe matching should cover the entire input string (not partial).\n\nExample:\nInput: s = "aa", p = "a"\nOutput: false', 'HARD', 300],
+      ['Container With Most Water', 'You are given an integer array height of length n. There are n vertical lines drawn such that the two endpoints of the ith line are (i, 0) and (i, height[i]).\n\nFind two lines that together with the x-axis form a container, such that the container contains the most water.\n\nReturn the maximum amount of water a container can store.', 'MEDIUM', 200, null],
+      ['Median of Two Sorted Arrays', 'Given two sorted arrays nums1 and nums2 of size m and n respectively, return the median of the two sorted arrays.\n\nThe overall run time complexity should be O(log (m+n)).\n\nExample:\nInput: nums1 = [1,3], nums2 = [2]\nOutput: 2.0', 'HARD', 300, null],
+      ['Trapping Rain Water', 'Given n non-negative integers representing an elevation map where the width of each bar is 1, compute how much water it can trap after raining.\n\nExample:\nInput: height = [0,1,0,2,1,0,1,3,2,1,2,1]\nOutput: 6', 'HARD', 300, null],
+      ['Regular Expression Matching', 'Given an input string s and a pattern p, implement regular expression matching with support for . and * where:\n\n. Matches any single character.\n* Matches zero or more of the preceding element.\n\nThe matching should cover the entire input string (not partial).\n\nExample:\nInput: s = "aa", p = "a"\nOutput: false', 'HARD', 300, null],
     ];
 
-    for (const [title, desc, diff, score] of problems) {
+    for (const [title, desc, diff, score, editorial] of problems) {
       await connection.execute(
-        `INSERT INTO problems (title, description, difficulty, max_score) VALUES (?, ?, ?, ?)`,
-        [title, desc, diff, score]
+        `INSERT INTO problems (title, description, difficulty, max_score, editorial) VALUES (?, ?, ?, ?, ?)`,
+        [title, desc, diff, score, editorial || null]
       );
     }
     console.log('  ✓ 10 problems (3 easy, 4 medium, 3 hard)');
@@ -185,6 +185,99 @@ async function seed() {
       [4, 4, 3, 'def isPalindrome(x):\n    return str(x) == str(x)[::-1]', 'python', 100]
     );
     console.log('  ✓ 10 submissions');
+
+    // ── Problem Tags ──
+    const tagMap = [
+      [1, ['Array', 'Hash Table']],
+      [2, ['String', 'Two Pointers']],
+      [3, ['Math']],
+      [4, ['String', 'Sliding Window', 'Hash Table']],
+      [5, ['Array', 'Sorting']],
+      [6, ['Tree', 'BFS']],
+      [7, ['Array', 'Two Pointers', 'Greedy']],
+      [8, ['Array', 'Binary Search', 'Divide and Conquer']],
+      [9, ['Array', 'Two Pointers', 'Dynamic Programming', 'Stack']],
+      [10, ['String', 'Dynamic Programming', 'Recursion']],
+    ];
+    for (const [pid, tags] of tagMap) {
+      for (const tag of tags) {
+        await connection.execute('INSERT INTO problem_tags (problem_id, tag) VALUES (?, ?)', [pid, tag]);
+      }
+    }
+    console.log('  ✓ problem tags');
+
+    // ── Sample Test Cases ──
+    const testCases = [
+      [1, '2 7 11 15\n9', '0 1', true],
+      [1, '3 2 4\n6', '1 2', true],
+      [1, '3 3\n6', '0 1', false],
+      [2, 'hello', 'olleh', true],
+      [2, 'Hannah', 'hannaH', true],
+      [3, '121', 'true', true],
+      [3, '-121', 'false', true],
+      [3, '10', 'false', false],
+      [4, 'abcabcbb', '3', true],
+      [4, 'bbbbb', '1', true],
+      [4, 'pwwkew', '3', false],
+      [5, '1 3\n2 6\n8 10\n15 18', '1 6\n8 10\n15 18', true],
+      [5, '1 4\n4 5', '1 5', true],
+    ];
+    for (const [pid, input, output, sample] of testCases) {
+      await connection.execute(
+        'INSERT INTO test_cases (problem_id, input, expected_output, is_sample) VALUES (?, ?, ?, ?)',
+        [pid, input, output, sample]
+      );
+    }
+    console.log('  ✓ test cases');
+
+    // ── Welcome Notifications ──
+    await connection.execute(
+      'INSERT INTO notifications (user_id, message, type) VALUES (?, ?, ?)',
+      [2, 'Welcome to CodeArena! Start by joining a contest.', 'info']
+    );
+    await connection.execute(
+      'INSERT INTO notifications (user_id, message, type) VALUES (?, ?, ?)',
+      [2, 'Your solution for "Two Sum" scored 100/100', 'success']
+    );
+    console.log('  ✓ notifications');
+
+    // ── User Badges ──
+    await connection.execute('INSERT INTO user_badges (user_id, badge_name) VALUES (?, ?)', [2, 'First Blood']);
+    await connection.execute('INSERT INTO user_badges (user_id, badge_name) VALUES (?, ?)', [2, '10-Streak']);
+    await connection.execute('INSERT INTO user_badges (user_id, badge_name) VALUES (?, ?)', [3, 'First Blood']);
+    console.log('  ✓ user badges');
+
+    // ── User Ratings Update (Mock Data) ──
+    await connection.execute('UPDATE users SET rating = 1650 WHERE user_id = 2');
+    await connection.execute('UPDATE users SET rating = 1580 WHERE user_id = 3');
+    await connection.execute('UPDATE users SET rating = 1510 WHERE user_id = 4');
+
+    // ── Learning Tracks ──
+    await connection.execute(
+      `INSERT INTO learning_tracks (title, description, difficulty) VALUES (?, ?, ?)`,
+      ['Algorithms 101', 'Master the basics of algorithms including sorting, searching, and fundamental math.', 'BEGINNER']
+    );
+    await connection.execute(
+      `INSERT INTO learning_tracks (title, description, difficulty) VALUES (?, ?, ?)`,
+      ['Data Structures Mastery', 'Deep dive into arrays, strings, hash tables, and linked lists.', 'INTERMEDIATE']
+    );
+    await connection.execute(
+      `INSERT INTO learning_tracks (title, description, difficulty) VALUES (?, ?, ?)`,
+      ['Advanced Graph Theory', 'Conquer complex graph algorithms like Dijkstra, Bellman-Ford, and A*.', 'ADVANCED']
+    );
+    console.log('  ✓ 3 learning tracks');
+
+    // ── Track Problems ──
+    // Algorithms 101: Two Sum (1), Reverse String (2), Palindrome Number (3)
+    await connection.execute(`INSERT INTO track_problems (track_id, problem_id, sequence_order) VALUES (1, 1, 1)`);
+    await connection.execute(`INSERT INTO track_problems (track_id, problem_id, sequence_order) VALUES (1, 2, 2)`);
+    await connection.execute(`INSERT INTO track_problems (track_id, problem_id, sequence_order) VALUES (1, 3, 3)`);
+    
+    // Data Structures Mastery: Merge Intervals (5), Container With Most Water (7), Trapping Rain Water (9)
+    await connection.execute(`INSERT INTO track_problems (track_id, problem_id, sequence_order) VALUES (2, 5, 1)`);
+    await connection.execute(`INSERT INTO track_problems (track_id, problem_id, sequence_order) VALUES (2, 7, 2)`);
+    await connection.execute(`INSERT INTO track_problems (track_id, problem_id, sequence_order) VALUES (2, 9, 3)`);
+    console.log('  ✓ track-problem mappings');
 
     console.log('\n🎉 Database seeded successfully!');
   } catch (err) {

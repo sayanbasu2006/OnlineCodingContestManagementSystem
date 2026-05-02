@@ -12,9 +12,9 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- Seed Users (Passwords are hashed 'admin123' / 'user123')
 INSERT INTO users (username, email, password, role) VALUES 
 ('admin', 'admin@codearena.com', '$2a$10$w8.3f6iY8QY4a5Z93n.GoeM3zJ1tX8.U6sD.P/tN4aF6x4T4T6j5K', 'ADMIN'),
-('sayan', 'sayan@codearena.com', '$2a$10$iGqD0Kk19T2F4oH1sZ6v4exM1mD/J0uX8lJ7w1v3rF/hZ7p3TqI2y', 'USER'),
+('sayan', 'sayan@codearena.com', 'sayan123', 'USER'),
 ('alice', 'alice@codearena.com', '$2a$10$iGqD0Kk19T2F4oH1sZ6v4exM1mD/J0uX8lJ7w1v3rF/hZ7p3TqI2y', 'USER'),
-('bob', 'bob@codearena.com', '$2a$10$iGqD0Kk19T2F4oH1sZ6v4exM1mD/J0uX8lJ7w1v3rF/hZ7p3TqI2y', 'USER'),
+('bob', 'bob@codearena.com', 'bob123', 'USER'),
 ('charlie', 'charlie@codearena.com', '$2a$10$iGqD0Kk19T2F4oH1sZ6v4exM1mD/J0uX8lJ7w1v3rF/hZ7p3TqI2y', 'USER');
 
 -- Seed Contests

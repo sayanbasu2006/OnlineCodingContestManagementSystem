@@ -13,11 +13,34 @@ import Submit from "./pages/Submit";
 import MySubmissions from "./pages/MySubmissions";
 import AdminPanel from "./pages/AdminPanel";
 import Profile from "./pages/Profile";
+import Playground from "./pages/Playground";
+import Tracks from "./pages/Tracks";
+import TrackDetails from "./pages/TrackDetails";
+import BattleArena from "./pages/BattleArena";
 
 import { fetchActiveParticipation, finishContest } from "./api/api";
 import { ToastProvider, useToast } from "./components/Toast";
 import ConfirmDialog from "./components/ConfirmDialog";
+import NotificationBell from "./components/NotificationBell";
 import "./index.css";
+
+// ─── Theme Context ───
+interface ThemeContextType { theme: string; toggleTheme: () => void; }
+const ThemeContext = createContext<ThemeContextType>({ theme: "dark", toggleTheme: () => {} });
+export const useTheme = () => useContext(ThemeContext);
+
+function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
+
+  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
+}
 
 // ─── Auth Context ───
 interface User { user_id: number; username: string; email: string; role: string; }
@@ -65,6 +88,7 @@ function useContestTimer(startTime: string, durationMinutes: number) {
 // ─── Layout ───
 function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout, isAuthenticated, activeContest, refreshActiveContest } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -101,6 +125,9 @@ function Layout({ children }: { children: React.ReactNode }) {
             <NavLink to="/" end className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">📊</span> Dashboard</NavLink>
             <NavLink to="/contests" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">🏆</span> Contests</NavLink>
             <NavLink to="/problems" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">📝</span> Problems</NavLink>
+            <NavLink to="/tracks" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">🗺️</span> Tracks</NavLink>
+            <NavLink to="/battle" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">⚔️</span> 1v1 Battle</NavLink>
+            <NavLink to="/playground" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">💻</span> Playground</NavLink>
             <NavLink to="/leaderboard" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">🏅</span> Leaderboard</NavLink>
             {isAuthenticated && (<>
               <NavLink to="/submit" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">🚀</span> Submit</NavLink>
@@ -129,6 +156,10 @@ function Layout({ children }: { children: React.ReactNode }) {
               <h2>CodeArena</h2>
             </div>
             <div className="profile">
+              <button className="theme-toggle-btn" onClick={toggleTheme} aria-label="Toggle theme" title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
+                {theme === "dark" ? "☀️" : "🌙"}
+              </button>
+              {isAuthenticated && <NotificationBell />}
               {isAuthenticated ? (<>
                 <NavLink to="/profile" className="user-badge"><span className="user-avatar">{user?.username?.charAt(0).toUpperCase()}</span>{user?.username}</NavLink>
                 <button onClick={handleLogout} className="btn-logout">Logout</button>
@@ -155,27 +186,58 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+import { AnimatePresence, motion } from "framer-motion";
+
+function PageTransition({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -15 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      style={{ width: "100%" }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function AnimatedRoutes() {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/" element={<Layout><PageTransition><Dashboard /></PageTransition></Layout>} />
+        <Route path="/contests" element={<Layout><PageTransition><Contests /></PageTransition></Layout>} />
+        <Route path="/contests/:id" element={<Layout><PageTransition><ContestDetail /></PageTransition></Layout>} />
+        <Route path="/problems" element={<Layout><PageTransition><Problems /></PageTransition></Layout>} />
+        <Route path="/problems/:id" element={<Layout><PageTransition><ProblemDetails /></PageTransition></Layout>} />
+        <Route path="/tracks" element={<Layout><PageTransition><Tracks /></PageTransition></Layout>} />
+        <Route path="/tracks/:id" element={<Layout><PageTransition><TrackDetails /></PageTransition></Layout>} />
+        <Route path="/battle" element={<ProtectedRoute><Layout><PageTransition><BattleArena /></PageTransition></Layout></ProtectedRoute>} />
+        <Route path="/playground" element={<Layout><PageTransition><Playground /></PageTransition></Layout>} />
+        <Route path="/leaderboard" element={<Layout><PageTransition><Leaderboard /></PageTransition></Layout>} />
+        <Route path="/submit" element={<ProtectedRoute><Layout><PageTransition><Submit /></PageTransition></Layout></ProtectedRoute>} />
+        <Route path="/submissions" element={<ProtectedRoute><Layout><PageTransition><MySubmissions /></PageTransition></Layout></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Layout><PageTransition><Profile /></PageTransition></Layout></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute><Layout><PageTransition><AdminPanel /></PageTransition></Layout></ProtectedRoute>} />
+      </Routes>
+    </AnimatePresence>
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <ToastProvider>
-        <AuthProvider>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/" element={<Layout><Dashboard /></Layout>} />
-            <Route path="/contests" element={<Layout><Contests /></Layout>} />
-            <Route path="/contests/:id" element={<Layout><ContestDetail /></Layout>} />
-            <Route path="/problems" element={<Layout><Problems /></Layout>} />
-            <Route path="/problems/:id" element={<Layout><ProblemDetails /></Layout>} />
-            <Route path="/leaderboard" element={<Layout><Leaderboard /></Layout>} />
-            <Route path="/submit" element={<ProtectedRoute><Layout><Submit /></Layout></ProtectedRoute>} />
-            <Route path="/submissions" element={<ProtectedRoute><Layout><MySubmissions /></Layout></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Layout><Profile /></Layout></ProtectedRoute>} />
-            <Route path="/admin" element={<ProtectedRoute><Layout><AdminPanel /></Layout></ProtectedRoute>} />
-          </Routes>
-        </AuthProvider>
-      </ToastProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <AnimatedRoutes />
+          </AuthProvider>
+        </ToastProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

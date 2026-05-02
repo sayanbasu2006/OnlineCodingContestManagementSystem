@@ -145,9 +145,6 @@ export const markAllNotificationsRead = () =>
 export const fetchUserBadges = (userId: number) =>
   apiRequest(`${API_BASE}/users/${userId}/badges`, { headers: getAuthHeaders() });
 
-export const runPlaygroundCode = (code: string, language: string, input: string) =>
-  apiRequest(`${API_BASE}/submissions/run`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ code, language, input }) });
-
 export const fetchComments = (problemId: number) =>
   apiRequest(`${API_BASE}/comments/${problemId}`);
 

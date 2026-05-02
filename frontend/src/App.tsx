@@ -13,10 +13,8 @@ import Submit from "./pages/Submit";
 import MySubmissions from "./pages/MySubmissions";
 import AdminPanel from "./pages/AdminPanel";
 import Profile from "./pages/Profile";
-import Playground from "./pages/Playground";
 import Tracks from "./pages/Tracks";
 import TrackDetails from "./pages/TrackDetails";
-import BattleArena from "./pages/BattleArena";
 
 import { fetchActiveParticipation, finishContest } from "./api/api";
 import { ToastProvider, useToast } from "./components/Toast";
@@ -126,8 +124,6 @@ function Layout({ children }: { children: React.ReactNode }) {
             <NavLink to="/contests" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">🏆</span> Contests</NavLink>
             <NavLink to="/problems" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">📝</span> Problems</NavLink>
             <NavLink to="/tracks" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">🗺️</span> Tracks</NavLink>
-            <NavLink to="/battle" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">⚔️</span> 1v1 Battle</NavLink>
-            <NavLink to="/playground" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">💻</span> Playground</NavLink>
             <NavLink to="/leaderboard" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">🏅</span> Leaderboard</NavLink>
             {isAuthenticated && (<>
               <NavLink to="/submit" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">🚀</span> Submit</NavLink>
@@ -216,8 +212,6 @@ function AnimatedRoutes() {
         <Route path="/problems/:id" element={<Layout><PageTransition><ProblemDetails /></PageTransition></Layout>} />
         <Route path="/tracks" element={<Layout><PageTransition><Tracks /></PageTransition></Layout>} />
         <Route path="/tracks/:id" element={<Layout><PageTransition><TrackDetails /></PageTransition></Layout>} />
-        <Route path="/battle" element={<ProtectedRoute><Layout><PageTransition><BattleArena /></PageTransition></Layout></ProtectedRoute>} />
-        <Route path="/playground" element={<Layout><PageTransition><Playground /></PageTransition></Layout>} />
         <Route path="/leaderboard" element={<Layout><PageTransition><Leaderboard /></PageTransition></Layout>} />
         <Route path="/submit" element={<ProtectedRoute><Layout><PageTransition><Submit /></PageTransition></Layout></ProtectedRoute>} />
         <Route path="/submissions" element={<ProtectedRoute><Layout><PageTransition><MySubmissions /></PageTransition></Layout></ProtectedRoute>} />

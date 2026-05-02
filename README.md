@@ -32,6 +32,7 @@
 *   **Submissions Tracking:** Real-time contest participation and seamless solution submissions with backend validation.
 *   **Live Leaderboards:** Track competitive standings dynamically with global and contest-specific ranking systems.
 *   **Analytical Dashboard:** Gain insights into platform-wide statistics, active users, and aggregate problem-solving metrics.
+*   **Dynamic Elite Themes:** Ultra-premium, eye-pleasing, and fully-featured light mode and dark mode theme overrides.
 
 ---
 

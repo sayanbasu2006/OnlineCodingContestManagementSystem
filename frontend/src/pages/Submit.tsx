@@ -75,7 +75,7 @@ export default function Submit() {
 
   const [contests, setContests] = useState<Contest[]>([]);
   const [problems, setProblems] = useState<Problem[]>([]);
-  const [participations, setParticipations] = useState<number[]>([]);
+  const [, setParticipations] = useState<number[]>([]);
 
   const [selectedContest, setSelectedContest] = useState<number>(0);
   const [selectedProblem, setSelectedProblem] = useState<number>(0);
@@ -209,7 +209,7 @@ export default function Submit() {
 
   if (loading) return <div className="skeleton-block" />;
 
-  const joinedContests = contests.filter((c) => participations.includes(c.contest_id));
+  // const joinedContests = contests.filter((c) => participations.includes(c.contest_id));
 
   return (
     <div className="submit-page">
@@ -292,6 +292,12 @@ export default function Submit() {
               ✨ {askingAi ? "Asking Mentor..." : "Ask AI Mentor"}
             </button>
           </div>
+          {aiHint && (
+            <div style={{ background: 'rgba(139, 92, 246, 0.1)', borderLeft: '4px solid #8b5cf6', padding: '12px', marginBottom: '12px', borderRadius: '0 4px 4px 0', fontSize: '14px', whiteSpace: 'pre-wrap' }}>
+              <strong>🤖 AI Mentor says:</strong><br />
+              {aiHint}
+            </div>
+          )}
           <div className="monaco-editor-wrap">
             <Editor
               height="400px"

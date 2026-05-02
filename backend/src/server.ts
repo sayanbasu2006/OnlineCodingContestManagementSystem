@@ -16,7 +16,6 @@ import leaderboardRoutes from './routes/leaderboardRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import exportRoutes from './routes/exportRoutes';
-import userRoutes from './routes/userRoutes';
 import commentRoutes from './routes/commentRoutes';
 import trackRoutes from './routes/trackRoutes';
 import aiRoutes from './routes/aiRoutes';

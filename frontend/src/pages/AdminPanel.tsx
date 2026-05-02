@@ -17,10 +17,13 @@ import {
   addProblemToContest,
   removeProblemFromContest,
   fetchDashboardStats,
+  fetchTestCases,
+  createTestCase,
+  deleteTestCase,
 } from "../api/api";
 
 interface Contest { contest_id: number; title: string; description: string; start_time: string; end_time: string; duration_minutes: number; status: string; }
-interface Problem { problem_id: number; title: string; description: string; difficulty: string; max_score: number; }
+interface Problem { problem_id: number; title: string; description: string; difficulty: string; max_score: number; tags: string[]; editorial?: string | null; }
 interface User { user_id: number; username: string; email: string; role: string; created_at: string; }
 interface Stats { totalContests: number; totalProblems: number; totalSubmissions: number; totalUsers: number; }
 type Tab = "overview" | "contests" | "problems" | "users";
@@ -36,6 +39,24 @@ function toLocalDatetime(iso: string) {
 function fromLocalDatetime(local: string) {
   return new Date(local).toISOString().slice(0, 19).replace("T", " ");
 }
+
+const handleExport = async (endpoint: string, filename: string) => {
+  try {
+    const res = await fetch(`http://localhost:5001/api/export/${endpoint}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+    });
+    if (!res.ok) throw new Error("Failed to export");
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    alert("Export failed: " + err);
+  }
+};
 
 export default function AdminPanel() {
   const { user } = useAuth();
@@ -102,6 +123,18 @@ function OverviewTab() {
           </div>
         ))}
       </div>
+      <div className="admin-actions-bar" style={{ marginTop: '30px', padding: '20px', background: 'var(--bg-card)', borderRadius: '12px' }}>
+        <h3>📁 Data Export</h3>
+        <p className="text-muted" style={{marginBottom: '15px'}}>Download platform data as CSV for external analysis or backup.</p>
+        <div style={{display: 'flex', gap: '10px'}}>
+          <button className="btn-primary" onClick={() => handleExport("leaderboard/global", "global_leaderboard.csv")}>
+            ⬇️ Export Global Leaderboard
+          </button>
+          <button className="btn-outline" onClick={() => handleExport("submissions", "all_submissions.csv")}>
+            ⬇️ Export All Submissions
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -153,6 +186,7 @@ function ContestsTab() {
                   <div className="admin-actions">
                     <button className="btn-small btn-outline" onClick={() => { setEditingContest(c); setShowForm(true); }}>✏️ Edit</button>
                     <button className="btn-small btn-accent" onClick={() => setManagingProblems(c)}>📝 Problems</button>
+                    <button className="btn-small btn-outline" onClick={() => handleExport(`leaderboard/${c.contest_id}`, `contest_${c.contest_id}_leaderboard.csv`)} title="Export Leaderboard">⬇️</button>
                     <button className="btn-small btn-danger" onClick={() => setDeleteTarget(c)}>🗑️</button>
                   </div>
                 </td>
@@ -332,16 +366,54 @@ function ProblemForm({ problem, onSave, onCancel }: { problem: Problem | null; o
   const isEdit = !!problem;
   const [title, setTitle] = useState(problem?.title || "");
   const [description, setDescription] = useState(problem?.description || "");
+  const [editorial, setEditorial] = useState(problem?.editorial || "");
   const [difficulty, setDifficulty] = useState(problem?.difficulty || "EASY");
   const [maxScore, setMaxScore] = useState(problem?.max_score || 100);
+  const [tagsStr, setTagsStr] = useState(problem?.tags?.join(", ") || "");
   const [saving, setSaving] = useState(false);
+
+  // Test case management (for edit mode)
+  interface TestCase { test_case_id: number; input: string; expected_output: string; is_sample: boolean; }
+  const [testCases, setTestCases] = useState<TestCase[]>([]);
+  const [loadingTC, setLoadingTC] = useState(false);
+  const [newInput, setNewInput] = useState("");
+  const [newOutput, setNewOutput] = useState("");
+  const [newSample, setNewSample] = useState(true);
+
+  useEffect(() => {
+    if (isEdit && problem) {
+      setLoadingTC(true);
+      fetchTestCases(problem.problem_id).then(setTestCases).catch(() => {}).finally(() => setLoadingTC(false));
+    }
+  }, [problem]);
+
+  const handleAddTC = async () => {
+    if (!newInput || !newOutput || !problem) { showToast("Fill input and output", "error"); return; }
+    try {
+      await createTestCase(problem.problem_id, { input: newInput, expected_output: newOutput, is_sample: newSample });
+      const tc = await fetchTestCases(problem.problem_id);
+      setTestCases(tc);
+      setNewInput(""); setNewOutput("");
+      showToast("Test case added!", "success");
+    } catch (err: any) { showToast(err.message, "error"); }
+  };
+
+  const handleDeleteTC = async (tcId: number) => {
+    if (!problem) return;
+    try {
+      await deleteTestCase(problem.problem_id, tcId);
+      setTestCases(testCases.filter(t => t.test_case_id !== tcId));
+      showToast("Test case deleted", "success");
+    } catch (err: any) { showToast(err.message, "error"); }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !description) { showToast("Fill all fields", "error"); return; }
     setSaving(true);
     try {
-      const data = { title, description, difficulty, max_score: maxScore };
+      const tags = tagsStr.split(",").map(t => t.trim()).filter(Boolean);
+      const data = { title, description, difficulty, max_score: maxScore, tags, editorial };
       if (isEdit) { await updateProblem(problem!.problem_id, data); showToast("Problem updated!", "success"); }
       else { await createProblem(data); showToast("Problem created!", "success"); }
       onSave();
@@ -350,15 +422,60 @@ function ProblemForm({ problem, onSave, onCancel }: { problem: Problem | null; o
 
   return (
     <div className="admin-form-overlay">
-      <div className="admin-form-card">
+      <div className="admin-form-card admin-form-wide">
         <div className="admin-form-header"><h3>{isEdit ? "✏️ Edit Problem" : "📝 Create Problem"}</h3><button className="admin-form-close" onClick={onCancel}>×</button></div>
         <form onSubmit={handleSubmit} className="admin-form">
           <div className="form-group"><label>Title *</label><input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Two Sum" required /></div>
-          <div className="form-group"><label>Description *</label><textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Full problem statement..." rows={10} required /><span className="form-hint">Include examples and constraints.</span></div>
+          <div className="form-group"><label>Description *</label><textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Full problem statement..." rows={8} required /><span className="form-hint">Include examples and constraints.</span></div>
           <div className="form-row">
             <div className="form-group"><label>Difficulty</label><select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}><option value="EASY">EASY</option><option value="MEDIUM">MEDIUM</option><option value="HARD">HARD</option></select></div>
             <div className="form-group"><label>Max Score</label><input type="number" value={maxScore} onChange={(e) => setMaxScore(parseInt(e.target.value) || 100)} min={10} max={1000} /></div>
           </div>
+          <div className="form-group">
+            <label>Tags</label>
+            <input type="text" value={tagsStr} onChange={(e) => setTagsStr(e.target.value)} placeholder="e.g., Array, Hash Table, Two Pointers" />
+            <span className="form-hint">Comma-separated tags for categorization</span>
+          </div>
+          <div className="form-group">
+            <label>Editorial / Solution (Markdown)</label>
+            <textarea value={editorial} onChange={(e) => setEditorial(e.target.value)} placeholder="Explain the solution..." rows={5} />
+            <span className="form-hint">Visible to users who have solved the problem</span>
+          </div>
+
+          {/* Test Case Manager (edit mode only) */}
+          {isEdit && (
+            <div className="test-case-manager">
+              <h4>🧪 Test Cases ({testCases.length})</h4>
+              {loadingTC ? <div className="skeleton-block" style={{ height: 60 }} /> : (
+                <>
+                  {testCases.length > 0 && (
+                    <div className="tc-list">
+                      {testCases.map((tc, idx) => (
+                        <div key={tc.test_case_id} className="tc-item">
+                          <div className="tc-item-info">
+                            <span className="tc-label">#{idx + 1} {tc.is_sample ? "(Sample)" : "(Hidden)"}</span>
+                            <code className="tc-preview">In: {tc.input.substring(0, 40)}{tc.input.length > 40 ? '...' : ''} → Out: {tc.expected_output.substring(0, 40)}{tc.expected_output.length > 40 ? '...' : ''}</code>
+                          </div>
+                          <button type="button" className="btn-small btn-danger" onClick={() => handleDeleteTC(tc.test_case_id)}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="tc-add-form">
+                    <div className="form-row">
+                      <div className="form-group"><label>Input</label><textarea value={newInput} onChange={(e) => setNewInput(e.target.value)} rows={2} placeholder="1 2 3" /></div>
+                      <div className="form-group"><label>Expected Output</label><textarea value={newOutput} onChange={(e) => setNewOutput(e.target.value)} rows={2} placeholder="6" /></div>
+                    </div>
+                    <div className="tc-add-actions">
+                      <label className="tc-sample-label"><input type="checkbox" checked={newSample} onChange={(e) => setNewSample(e.target.checked)} /> Visible to users (sample)</label>
+                      <button type="button" className="btn-small btn-accent" onClick={handleAddTC}>+ Add Test Case</button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           <div className="form-actions">
             <button type="button" className="btn-secondary" onClick={onCancel}>Cancel</button>
             <button type="submit" className="btn-primary" disabled={saving}>{saving ? "Saving..." : isEdit ? "Update" : "Create"}</button>

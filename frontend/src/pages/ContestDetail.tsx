@@ -12,6 +12,7 @@ interface Contest {
   start_time: string;
   end_time: string;
   status: "UPCOMING" | "ONGOING" | "ENDED";
+  participant_count?: number;
 }
 
 interface Problem {
@@ -88,7 +89,7 @@ export default function ContestDetail() {
     setJoining(true);
     try {
       await joinContest(parseInt(id!));
-      setParticipation({ status: 'JOINED' });
+      setParticipation({ status: 'REGISTERED' });
       showToast("Successfully joined contest!", "success");
     } catch (err: any) {
       showToast(err.message, "error");
@@ -140,6 +141,7 @@ export default function ContestDetail() {
               {contest.status}
             </span>
             <span className="problem-count">{problems.length} Problems</span>
+            <span className="participant-count">👥 {contest.participant_count || 0} Participants</span>
           </div>
           <h1>{contest.title}</h1>
           <p className="contest-description">{contest.description}</p>
@@ -170,13 +172,13 @@ export default function ContestDetail() {
             </button>
           )}
 
-          {participation?.status === 'JOINED' && contest.status === 'ONGOING' && (
+          {participation?.status === 'REGISTERED' && contest.status === 'ONGOING' && (
             <button onClick={() => setShowStartConfirm(true)} disabled={starting} className="btn-primary btn-join" style={{ background: '#f59e0b', borderColor: '#f59e0b' }}>
               {starting ? "Starting..." : "⏳ Start Exam Timer"}
             </button>
           )}
 
-          {participation?.status === 'JOINED' && contest.status === 'UPCOMING' && (
+          {participation?.status === 'REGISTERED' && contest.status === 'UPCOMING' && (
              <span className="joined-badge">✅ Registered (Waiting for start)</span>
           )}
 

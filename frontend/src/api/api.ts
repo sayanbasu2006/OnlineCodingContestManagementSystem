@@ -90,17 +90,32 @@ export const updateProblem = (id: number, data: any) =>
 export const deleteProblem = (id: number) =>
   apiRequest(`${API_BASE}/problems/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
 
+// ─── Test Cases ───
+export const fetchTestCases = (problemId: number) =>
+  apiRequest(`${API_BASE}/problems/${problemId}/test-cases`, { headers: getAuthHeaders() });
+
+export const createTestCase = (problemId: number, data: { input: string; expected_output: string; is_sample: boolean }) =>
+  apiRequest(`${API_BASE}/problems/${problemId}/test-cases`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(data) });
+
+export const deleteTestCase = (problemId: number, testCaseId: number) =>
+  apiRequest(`${API_BASE}/problems/${problemId}/test-cases/${testCaseId}`, { method: 'DELETE', headers: getAuthHeaders() });
+
 // ─── Leaderboard ───
 export const fetchLeaderboard = (contestId?: number) =>
   apiRequest(contestId ? `${API_BASE}/leaderboard/${contestId}` : `${API_BASE}/leaderboard`);
 
 // ─── Submissions ───
-export function fetchSubmissions(filters?: { user_id?: number; contest_id?: number }) {
+export function fetchSubmissions(filters?: { user_id?: number; contest_id?: number; page?: number; limit?: number }) {
   const params = new URLSearchParams();
   if (filters?.user_id) params.set('user_id', String(filters.user_id));
   if (filters?.contest_id) params.set('contest_id', String(filters.contest_id));
+  if (filters?.page) params.set('page', String(filters.page));
+  if (filters?.limit) params.set('limit', String(filters.limit));
   return apiRequest(`${API_BASE}/submissions?${params}`);
 }
+
+export const fetchSubmissionById = (id: number) =>
+  apiRequest(`${API_BASE}/submissions/${id}`, { headers: getAuthHeaders() });
 
 export const submitSolution = (contestId: number, problemId: number, code: string, language: string) =>
   apiRequest(`${API_BASE}/submissions`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ contest_id: contestId, problem_id: problemId, code, language }) });
@@ -115,3 +130,46 @@ export function fetchParticipations(filters?: { user_id?: number; contest_id?: n
 
 // ─── Users (admin) ───
 export const fetchUsers = () => apiRequest(`${API_BASE}/auth/users`, { headers: getAuthHeaders() });
+
+// ─── Notifications ───
+export const fetchNotifications = () =>
+  apiRequest(`${API_BASE}/notifications`, { headers: getAuthHeaders() });
+
+export const markNotificationRead = (id: number) =>
+  apiRequest(`${API_BASE}/notifications/${id}/read`, { method: 'PUT', headers: getAuthHeaders() });
+
+export const markAllNotificationsRead = () =>
+  apiRequest(`${API_BASE}/notifications/read-all`, { method: 'PUT', headers: getAuthHeaders() });
+
+// ─── Badges ───
+export const fetchUserBadges = (userId: number) =>
+  apiRequest(`${API_BASE}/users/${userId}/badges`, { headers: getAuthHeaders() });
+
+export const runPlaygroundCode = (code: string, language: string, input: string) =>
+  apiRequest(`${API_BASE}/submissions/run`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ code, language, input }) });
+
+export const fetchComments = (problemId: number) =>
+  apiRequest(`${API_BASE}/comments/${problemId}`);
+
+export const postComment = (problemId: number, content: string) =>
+  apiRequest(`${API_BASE}/comments/${problemId}`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ content })
+  });
+
+export const fetchTracks = () =>
+  apiRequest(`${API_BASE}/tracks`);
+
+export const fetchTrackById = (trackId: number) =>
+  apiRequest(`${API_BASE}/tracks/${trackId}`);
+
+export const fetchTrackProgress = (trackId: number) =>
+  apiRequest(`${API_BASE}/tracks/${trackId}/progress`, { headers: getAuthHeaders() });
+
+export const getAiHint = (problemId: number, code: string, language: string) =>
+  apiRequest(`${API_BASE}/ai/hint`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ problemId, code, language })
+  });

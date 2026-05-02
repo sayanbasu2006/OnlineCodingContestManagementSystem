@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { fetchDashboardStats, fetchContests, fetchSubmissions, fetchParticipations } from "../api/api";
+import { fetchDashboardStats, fetchContests, fetchSubmissions } from "../api/api";
 import { useAuth } from "../App";
 
 interface DashboardStats {
@@ -71,7 +72,7 @@ export default function Dashboard() {
       .then(([statsData, contestsData, subsData]) => {
         setStats(statsData);
         setContests(contestsData);
-        if (subsData) setSubmissions(subsData.slice(0, 5));
+        if (subsData) setSubmissions((subsData.data || subsData).slice(0, 5));
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -93,34 +94,34 @@ export default function Dashboard() {
       </div>
 
       <div className="stats-grid">
-        <div className="stat-card">
+        <motion.div className="stat-card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <span className="stat-icon">🏆</span>
           <div className="stat-info">
             <span className="stat-value">{stats.totalContests}</span>
             <span className="stat-label">Contests</span>
           </div>
-        </div>
-        <div className="stat-card">
+        </motion.div>
+        <motion.div className="stat-card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <span className="stat-icon">📝</span>
           <div className="stat-info">
             <span className="stat-value">{stats.totalProblems}</span>
             <span className="stat-label">Problems</span>
           </div>
-        </div>
-        <div className="stat-card">
+        </motion.div>
+        <motion.div className="stat-card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <span className="stat-icon">🚀</span>
           <div className="stat-info">
             <span className="stat-value">{stats.totalSubmissions}</span>
             <span className="stat-label">Submissions</span>
           </div>
-        </div>
-        <div className="stat-card">
+        </motion.div>
+        <motion.div className="stat-card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
           <span className="stat-icon">👥</span>
           <div className="stat-info">
             <span className="stat-value">{stats.totalUsers}</span>
             <span className="stat-label">Users</span>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       <div className="dashboard-grid">

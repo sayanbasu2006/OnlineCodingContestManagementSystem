@@ -8,11 +8,11 @@ const router = express.Router();
 router.get('/', async (req: Request, res: Response): Promise<void> => {
     try {
         const [rows]: any = await pool.execute(
-            `SELECT u.user_id, u.username, SUM(s.score) AS total_score, COUNT(s.submission_id) AS submissions
-             FROM submissions s
-             JOIN users u ON s.user_id = u.user_id
-             GROUP BY u.user_id, u.username
-             ORDER BY total_score DESC`
+            `SELECT u.user_id, u.username, u.rating, COALESCE(SUM(s.score), 0) AS total_score, COUNT(s.submission_id) AS submissions
+             FROM users u
+             LEFT JOIN submissions s ON u.user_id = s.user_id
+             GROUP BY u.user_id, u.username, u.rating
+             ORDER BY total_score DESC, u.rating DESC`
         );
         const leaderboard = rows.map((row: any, i: number) => ({ rank: i + 1, ...row }));
         res.json(leaderboard);

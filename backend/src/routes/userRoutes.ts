@@ -16,5 +16,17 @@ router.get('/', protect, admin, async (req: Request, res: Response): Promise<voi
         res.status(500).json({ error: err.message });
     }
 });
+// Get user badges
+router.get('/:id/badges', async (req: Request, res: Response): Promise<void> => {
+    try {
+        const [rows]: any = await pool.execute(
+            'SELECT badge_name, earned_at FROM user_badges WHERE user_id = ? ORDER BY earned_at DESC',
+            [req.params.id]
+        );
+        res.json(rows);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 export default router;

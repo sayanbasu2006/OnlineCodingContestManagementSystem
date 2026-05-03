@@ -148,11 +148,11 @@ npm run seed
 
 If you seeded the database in Step 4, use the following credentials to explore different roles:
 
-| Role      | Email                 | Password  | Access Level                                        |
-| :---      | :---                  | :---      | :---                                                |
-| **Admin** | `admin@codearena.com` | `admin123`| *All permissions (Create/Edit Contests & Problems)* |
-| **User**  | `sayan@codearena.com` | `user123` | *Participant (Join Contests, Submit Code)*          |
-| **User**  | `alice@codearena.com` | `user123` | *Participant*                                       |
+| Role      | Email                 | Password   | Access Level                                        |
+| :---      | :---                  | :---       | :---                                                |
+| **Admin** | `admin@codearena.com` | `admin123` | *All permissions (Create/Edit Contests & Problems)* |
+| **User**  | `sayan@codearena.com` | `sayan123` | *Participant (Join Contests, Submit Code)*          |
+| **User**  | `alice@codearena.com` | `alice123` | *Participant*                                       |
 
 ---
 

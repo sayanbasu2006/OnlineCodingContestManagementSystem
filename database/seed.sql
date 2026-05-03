@@ -16,7 +16,7 @@ INSERT INTO users (username, email, password, role) VALUES
 ('alice', 'alice@codearena.com', '$2a$10$iGqD0Kk19T2F4oH1sZ6v4exM1mD/J0uX8lJ7w1v3rF/hZ7p3TqI2y', 'USER'),
 ('bob', 'bob@codearena.com', 'bob123', 'USER'),
 ('charlie', 'charlie@codearena.com', '$2a$10$iGqD0Kk19T2F4oH1sZ6v4exM1mD/J0uX8lJ7w1v3rF/hZ7p3TqI2y', 'USER');
-
+    
 -- Seed Contests
 INSERT INTO contests (title, description, start_time, end_time, status) VALUES 
 ('Weekly Contest 1', 'First weekly coding contest featuring algorithmic challenges.', '2026-12-10 09:00:00', '2026-12-10 12:00:00', 'ONGOING'),

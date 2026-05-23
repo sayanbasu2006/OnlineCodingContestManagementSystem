@@ -29,6 +29,34 @@ const PORT = process.env.PORT || 5001;
 app.use(cors());
 app.use(express.json());
 
+// Lazy database initialization middleware for serverless execution
+let isDbInitialized = false;
+let dbInitPromise: Promise<void> | null = null;
+
+app.use(async (_req, res, next) => {
+    if (!isDbInitialized) {
+        if (!dbInitPromise) {
+            console.log('🔄 Lazy-initializing database pool for serverless instance...');
+            dbInitPromise = initializeDatabase()
+                .then(() => {
+                    isDbInitialized = true;
+                    console.log('✅ Lazy database pool initialization succeeded.');
+                })
+                .catch((err: any) => {
+                    console.error('❌ Lazy database pool initialization failed:', err.message);
+                    dbInitPromise = null; // Reset to retry on the next request
+                    throw err;
+                });
+        }
+        try {
+            await dbInitPromise;
+        } catch (err: any) {
+            return res.status(500).json({ error: 'Database initialization failed: ' + err.message });
+        }
+    }
+    next();
+});
+
 app.get('/', (_req, res) => {
     res.status(200).json({
         status: 'ok',
@@ -75,4 +103,9 @@ async function start() {
     }
 }
 
-start();
+// Only start listening locally; Vercel handles invocation through default export
+if (!process.env.VERCEL) {
+    start();
+}
+
+export default app;

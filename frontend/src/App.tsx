@@ -118,7 +118,7 @@ function Layout({ children }: { children: React.ReactNode }) {
     <div className="layout">
       {!isLocked && (
         <aside className={`sidebar ${mobileMenuOpen ? "sidebar-open" : ""}`}>
-          <div className="brand"><div className="brand-mark" /><div className="brand-text"><span className="brand-title">CodeArena</span><span className="brand-subtitle">Coding Contest</span></div></div>
+          <div className="brand"><img src="/logo.png" alt="CodeArena" className="brand-mark" /><div className="brand-text"><span className="brand-title">CodeArena</span><span className="brand-subtitle">Coding Contest</span></div></div>
           <nav className="sidebar-nav">
             <NavLink to="/" end className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">📊</span> Dashboard</NavLink>
             <NavLink to="/contests" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">🏆</span> Contests</NavLink>

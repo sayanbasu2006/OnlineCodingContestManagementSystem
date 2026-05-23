@@ -4,6 +4,7 @@ import { useAuth } from "../App";
 import { useToast } from "../components/Toast";
 import ConfirmDialog from "../components/ConfirmDialog";
 import {
+  API_BASE,
   fetchContests,
   fetchProblems,
   fetchUsers,
@@ -42,7 +43,7 @@ function fromLocalDatetime(local: string) {
 
 const handleExport = async (endpoint: string, filename: string) => {
   try {
-    const res = await fetch(`http://localhost:5001/api/export/${endpoint}`, {
+    const res = await fetch(`${API_BASE}/export/${endpoint}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
     });
     if (!res.ok) throw new Error("Failed to export");

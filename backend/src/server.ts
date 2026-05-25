@@ -1,9 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import http from 'http';
-import { Server as SocketIOServer } from 'socket.io';
-import setupSocket from './socket';
 const { initializeDatabase } = require('./config/db');
 
 // Import routes
@@ -26,7 +23,14 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 // Middleware
-app.use(cors());
+const allowedOrigins = process.env.FRONTEND_URL
+    ? [process.env.FRONTEND_URL, 'http://localhost:5173', 'http://127.0.0.1:5173']
+    : ['http://localhost:5173', 'http://127.0.0.1:5173'];
+
+app.use(cors({
+    origin: allowedOrigins,
+    credentials: true
+}));
 app.use(express.json());
 
 // Lazy database initialization middleware for serverless execution
@@ -79,28 +83,24 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/tracks', trackRoutes);
 app.use('/api/ai', aiRoutes);
 
-// Database initialization & server start
-const server = http.createServer(app);
-const io = new SocketIOServer(server, {
-    cors: {
-        origin: '*', // For dev
-        methods: ["GET", "POST"]
-    }
-});
-setupSocket(io);
+// Export app for Vercel serverless function
+export default app;
 
-async function start() {
-    try {
-        await initializeDatabase();
-        server.listen(PORT, () => {
-            console.log(`\n🚀 CodeArena MVP API running at http://localhost:${PORT}`);
-            console.log(`   Configured with TypeScript modular routing & Socket.IO.`);
-            console.log(`   Gemini AI Mentor integration enabled..`);
-        });
-    } catch (err: any) {
-        console.error('Failed to start server:', err.message);
-        process.exit(1);
+// Only start listening when running locally (not in Vercel)
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+    async function start() {
+        try {
+            await initializeDatabase();
+            app.listen(PORT, () => {
+                console.log(`\n🚀 CodeArena API running at http://localhost:${PORT}`);
+                console.log(`   Gemini AI Mentor integration enabled.`);
+            });
+        } catch (err: any) {
+            console.error('Failed to start server:', err.message);
+            process.exit(1);
+        }
     }
+    start();
 }
 
 // Only start listening locally; Vercel handles invocation through default export

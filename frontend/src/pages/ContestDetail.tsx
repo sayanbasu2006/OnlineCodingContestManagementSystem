@@ -213,10 +213,10 @@ export default function ContestDetail() {
                     </button>
                     {participation?.status === "STARTED" && (
                       <button
-                        onClick={() => navigate(`/submit?contest=${contest.contest_id}&problem=${p.problem_id}`)}
+                        onClick={() => navigate(`/problems/${p.problem_id}?contest=${contest.contest_id}`)}
                         className="btn-small btn-accent"
                       >
-                        Submit
+                        Solve Problem
                       </button>
                     )}
                   </div>

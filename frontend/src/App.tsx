@@ -9,7 +9,6 @@ import ContestDetail from "./pages/ContestDetail";
 import Problems from "./pages/Problems";
 import ProblemDetails from "./pages/ProblemDetails";
 import Leaderboard from "./pages/Leaderboard";
-import Submit from "./pages/Submit";
 import MySubmissions from "./pages/MySubmissions";
 import AdminPanel from "./pages/AdminPanel";
 import Profile from "./pages/Profile";
@@ -151,21 +150,58 @@ function Layout({ children }: { children: React.ReactNode }) {
               <button className="mobile-menu-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu">{mobileMenuOpen ? "✕" : "☰"}</button>
               <h2>CodeArena</h2>
             </div>
-            <div className="profile">
+            <div className="top-navbar-right">
+
               <button className="theme-toggle-btn" onClick={toggleTheme} aria-label="Toggle theme" title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
                 {theme === "dark" ? "☀️" : "🌙"}
               </button>
               {isAuthenticated && <NotificationBell />}
-              {isAuthenticated ? (<>
-                <NavLink to="/profile" className="user-badge"><span className="user-avatar">{user?.username?.charAt(0).toUpperCase()}</span>{user?.username}</NavLink>
-                <button onClick={handleLogout} className="btn-logout">Logout</button>
-              </>) : <NavLink to="/login" className="btn-login">Login</NavLink>}
+              {isAuthenticated ? (
+                <div className="user-menu-group">
+                  <NavLink to="/profile" className="user-badge">
+                    <span className="user-avatar">{user?.username?.charAt(0).toUpperCase()}</span>
+                    <span className="user-name-display">{user?.username}</span>
+                  </NavLink>
+                  <button onClick={handleLogout} className="btn-logout">Logout</button>
+                </div>
+              ) : (
+                <div className="auth-buttons">
+                  <NavLink to="/login" className="btn-secondary btn-sm">Login</NavLink>
+                  <NavLink to="/register" className="btn-primary btn-sm">Sign Up</NavLink>
+                </div>
+              )}
+              <button className="mobile-menu-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu">{mobileMenuOpen ? "✕" : "☰"}</button>
             </div>
-          </header>
-        )}
-        <div className="content">{children}</div>
-      </div>
+          </div>
+        </header>
+      )}
 
+      <main className="main-content">
+        <div className="content-container">{children}</div>
+      </main>
+
+      {mobileMenuOpen && !isLocked && (
+        <div className="mobile-dropdown-nav">
+          <nav>
+            <NavLink to="/" end onClick={() => setMobileMenuOpen(false)}>Dashboard</NavLink>
+            <NavLink to="/contests" onClick={() => setMobileMenuOpen(false)}>Contests</NavLink>
+            <NavLink to="/problems" onClick={() => setMobileMenuOpen(false)}>Problems</NavLink>
+            <NavLink to="/tracks" onClick={() => setMobileMenuOpen(false)}>Tracks</NavLink>
+            <NavLink to="/leaderboard" onClick={() => setMobileMenuOpen(false)}>Leaderboard</NavLink>
+            {isAuthenticated && (
+              <>
+                <NavLink to="/submit" onClick={() => setMobileMenuOpen(false)}>Submit</NavLink>
+                <NavLink to="/submissions" onClick={() => setMobileMenuOpen(false)}>My Submissions</NavLink>
+                <NavLink to="/profile" onClick={() => setMobileMenuOpen(false)}>Profile</NavLink>
+              </>
+            )}
+            {isAuthenticated && user?.role === "ADMIN" && (
+              <NavLink to="/admin" onClick={() => setMobileMenuOpen(false)}>Admin Panel</NavLink>
+            )}
+          </nav>
+        </div>
+      )}
+      
       {mobileMenuOpen && <div className="mobile-overlay" onClick={() => setMobileMenuOpen(false)} />}
       <ConfirmDialog open={showFinishConfirm} title="Finish Exam Early" message="Are you sure? You cannot undo this." confirmText="Finish Exam" variant="warning" onConfirm={handleFinishExam} onCancel={() => setShowFinishConfirm(false)} />
     </div>
@@ -213,7 +249,7 @@ function AnimatedRoutes() {
         <Route path="/tracks" element={<Layout><PageTransition><Tracks /></PageTransition></Layout>} />
         <Route path="/tracks/:id" element={<Layout><PageTransition><TrackDetails /></PageTransition></Layout>} />
         <Route path="/leaderboard" element={<Layout><PageTransition><Leaderboard /></PageTransition></Layout>} />
-        <Route path="/submit" element={<ProtectedRoute><Layout><PageTransition><Submit /></PageTransition></Layout></ProtectedRoute>} />
+
         <Route path="/submissions" element={<ProtectedRoute><Layout><PageTransition><MySubmissions /></PageTransition></Layout></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Layout><PageTransition><Profile /></PageTransition></Layout></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><Layout><PageTransition><AdminPanel /></PageTransition></Layout></ProtectedRoute>} />

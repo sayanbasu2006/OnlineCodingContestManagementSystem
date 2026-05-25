@@ -7,7 +7,7 @@ const { pool } = require('../config/db');
 
 const router = express.Router();
 
-const API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || "AIzaSyDummyKeyForDevelopment"; 
+const API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || ""; 
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 router.post('/hint', protect, async (req: AuthRequest, res: Response): Promise<void> => {
@@ -19,7 +19,8 @@ router.post('/hint', protect, async (req: AuthRequest, res: Response): Promise<v
             return;
         }
 
-        const [problemRows]: any = await pool.execute('SELECT * FROM problems WHERE problem_id = ?', [problemId]);
+        const problemResult = await pool.query('SELECT * FROM problems WHERE problem_id = $1', [problemId]);
+        const problemRows = problemResult.rows;
         if (problemRows.length === 0) {
             res.status(404).json({ error: 'Problem not found' });
             return;

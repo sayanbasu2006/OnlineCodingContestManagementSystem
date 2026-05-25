@@ -1,21 +1,20 @@
--- Create database
-CREATE DATABASE IF NOT EXISTS `codearena`;
-USE `codearena`;
+-- Create database (Run manually if needed before applying schema)
+-- CREATE DATABASE codearena;
 
 -- Users Table
 CREATE TABLE IF NOT EXISTS users (
-  user_id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id SERIAL PRIMARY KEY,
   username VARCHAR(50) NOT NULL UNIQUE,
   email VARCHAR(100) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
   role ENUM('ADMIN','USER') NOT NULL DEFAULT 'USER',
   rating INT DEFAULT 1500,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
+);
 
 -- Contests Table
 CREATE TABLE IF NOT EXISTS contests (
-  contest_id INT AUTO_INCREMENT PRIMARY KEY,
+  contest_id SERIAL PRIMARY KEY,
   title VARCHAR(100) NOT NULL,
   description TEXT NOT NULL,
   start_time DATETIME NOT NULL,
@@ -23,11 +22,11 @@ CREATE TABLE IF NOT EXISTS contests (
   duration_minutes INT NOT NULL DEFAULT 120,
   status ENUM('UPCOMING','ONGOING','ENDED') NOT NULL DEFAULT 'UPCOMING',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
+);
 
 -- Problems Table
 CREATE TABLE IF NOT EXISTS problems (
-  problem_id INT AUTO_INCREMENT PRIMARY KEY,
+  problem_id SERIAL PRIMARY KEY,
   title VARCHAR(100) NOT NULL,
   description TEXT NOT NULL,
   difficulty ENUM('EASY','MEDIUM','HARD') NOT NULL,
@@ -37,27 +36,31 @@ CREATE TABLE IF NOT EXISTS problems (
 
 -- Contest_Problems Junction Table
 CREATE TABLE IF NOT EXISTS contest_problems (
-  contest_id INT NOT NULL,
-  problem_id INT NOT NULL,
-  PRIMARY KEY (contest_id, problem_id),
-  FOREIGN KEY (contest_id) REFERENCES contests(contest_id) ON DELETE CASCADE,
-  FOREIGN KEY (problem_id) REFERENCES problems(problem_id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+  contest_id INT NOT NULL REFERENCES contests(contest_id) ON DELETE CASCADE,
+  problem_id INT NOT NULL REFERENCES problems(problem_id) ON DELETE CASCADE,
+  PRIMARY KEY (contest_id, problem_id)
+);
+
+-- Test Cases Table
+CREATE TABLE IF NOT EXISTS test_cases (
+  test_case_id SERIAL PRIMARY KEY,
+  problem_id INT NOT NULL REFERENCES problems(problem_id) ON DELETE CASCADE,
+  input TEXT NOT NULL,
+  expected_output TEXT NOT NULL,
+  is_sample BOOLEAN DEFAULT FALSE
+);
 
 -- Submissions Table
 CREATE TABLE IF NOT EXISTS submissions (
-  submission_id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT NOT NULL,
-  contest_id INT NOT NULL,
-  problem_id INT NOT NULL,
+  submission_id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  contest_id INT NOT NULL REFERENCES contests(contest_id) ON DELETE CASCADE,
+  problem_id INT NOT NULL REFERENCES problems(problem_id) ON DELETE CASCADE,
   code TEXT,
   language VARCHAR(30) DEFAULT 'cpp',
   score INT DEFAULT 0,
-  submission_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-  FOREIGN KEY (contest_id) REFERENCES contests(contest_id) ON DELETE CASCADE,
-  FOREIGN KEY (problem_id) REFERENCES problems(problem_id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+  submission_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 -- Participations Table
 CREATE TABLE IF NOT EXISTS participations (

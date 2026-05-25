@@ -164,9 +164,3 @@ export const fetchTrackById = (trackId: number) =>
 export const fetchTrackProgress = (trackId: number) =>
   apiRequest(`${API_BASE}/tracks/${trackId}/progress`, { headers: getAuthHeaders() });
 
-export const getAiHint = (problemId: number, code: string, language: string) =>
-  apiRequest(`${API_BASE}/ai/hint`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ problemId, code, language })
-  });

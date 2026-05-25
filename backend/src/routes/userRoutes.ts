@@ -8,9 +8,10 @@ const router = express.Router();
 // Get all users (admin only)
 router.get('/', protect, admin, async (req: Request, res: Response): Promise<void> => {
     try {
-        const [rows]: any = await pool.execute(
+        const result: any = await pool.query(
             'SELECT user_id, username, email, role, created_at FROM users ORDER BY user_id'
         );
+        const rows = result.rows;
         res.json(rows);
     } catch (err: any) {
         res.status(500).json({ error: err.message });
@@ -19,10 +20,11 @@ router.get('/', protect, admin, async (req: Request, res: Response): Promise<voi
 // Get user badges
 router.get('/:id/badges', async (req: Request, res: Response): Promise<void> => {
     try {
-        const [rows]: any = await pool.execute(
-            'SELECT badge_name, earned_at FROM user_badges WHERE user_id = ? ORDER BY earned_at DESC',
+        const result: any = await pool.query(
+            'SELECT badge_name, earned_at FROM user_badges WHERE user_id = $1 ORDER BY earned_at DESC',
             [req.params.id]
         );
+        const rows = result.rows;
         res.json(rows);
     } catch (err: any) {
         res.status(500).json({ error: err.message });

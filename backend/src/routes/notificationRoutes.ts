@@ -9,14 +9,16 @@ const router = express.Router();
 router.get('/', protect, async (req: any, res: Response): Promise<void> => {
     try {
         const user_id = req.user?.user_id;
-        const [rows]: any = await pool.execute(
-            `SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50`,
+        const result: any = await pool.query(
+            `SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50`,
             [user_id]
         );
-        const [unreadCount]: any = await pool.execute(
-            'SELECT COUNT(*) AS count FROM notifications WHERE user_id = ? AND is_read = FALSE',
+        const rows = result.rows;
+        const unreadCountResult: any = await pool.query(
+            'SELECT COUNT(*) AS count FROM notifications WHERE user_id = $1 AND is_read = FALSE',
             [user_id]
         );
+        const unreadCount = unreadCountResult.rows;
         res.json({ notifications: rows, unread_count: unreadCount[0]?.count || 0 });
     } catch (err: any) {
         res.status(500).json({ error: err.message });
@@ -26,8 +28,8 @@ router.get('/', protect, async (req: any, res: Response): Promise<void> => {
 // Mark single notification as read
 router.put('/:id/read', protect, async (req: any, res: Response): Promise<void> => {
     try {
-        await pool.execute(
-            'UPDATE notifications SET is_read = TRUE WHERE notification_id = ? AND user_id = ?',
+        await pool.query(
+            'UPDATE notifications SET is_read = TRUE WHERE notification_id = $1 AND user_id = $2',
             [req.params.id, req.user?.user_id]
         );
         res.json({ message: 'Marked as read' });
@@ -39,8 +41,8 @@ router.put('/:id/read', protect, async (req: any, res: Response): Promise<void> 
 // Mark all as read
 router.put('/read-all', protect, async (req: any, res: Response): Promise<void> => {
     try {
-        await pool.execute(
-            'UPDATE notifications SET is_read = TRUE WHERE user_id = ?',
+        await pool.query(
+            'UPDATE notifications SET is_read = TRUE WHERE user_id = $1',
             [req.user?.user_id]
         );
         res.json({ message: 'All marked as read' });

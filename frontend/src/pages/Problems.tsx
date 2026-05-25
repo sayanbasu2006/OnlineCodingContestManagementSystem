@@ -38,7 +38,7 @@ export default function Problems() {
   // Filtered problems
   const filtered = useMemo(() => {
     return problems.filter((p) => {
-      if (search && !p.title.toLowerCase().includes(search.toLowerCase())) return false;
+      if (search && !(p.title || "").toLowerCase().includes(search.toLowerCase())) return false;
       if (diffFilter !== "ALL" && p.difficulty !== diffFilter) return false;
       if (tagFilter !== "ALL" && (!p.tags || !p.tags.includes(tagFilter))) return false;
       return true;

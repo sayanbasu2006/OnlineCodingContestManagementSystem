@@ -1,6 +1,6 @@
-const mysql = require('mysql2/promise');
+const { Client } = require('pg');
 const bcrypt = require('bcryptjs');
-const { DB_CONFIG, DB_NAME } = require('./database');
+require('dotenv').config();
 
 // Generate dates relative to NOW so contests are always valid
 const now = new Date();
@@ -11,9 +11,20 @@ const hoursFromNow = (h) => { const dt = new Date(now); dt.setHours(dt.getHours(
 
 // ── Refresh dates only mode (non-destructive) ──
 async function refreshDates() {
-  let connection;
+  let client;
   try {
-    connection = await mysql.createConnection({ ...DB_CONFIG, database: DB_NAME });
+    client = new Client(
+      process.env.DATABASE_URL
+        ? { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
+        : {
+            host: process.env.DB_HOST || 'localhost',
+            port: parseInt(process.env.DB_PORT || '5432'),
+            user: process.env.DB_USER || 'postgres',
+            password: process.env.DB_PASSWORD || '',
+            database: process.env.DB_NAME || 'codearena'
+          }
+    );
+    await client.connect();
     console.log('🔄 Refreshing contest dates (non-destructive)...\n');
 
     const updates = [
@@ -24,11 +35,11 @@ async function refreshDates() {
     ];
 
     for (const u of updates) {
-      const [result] = await connection.execute(
-        'UPDATE contests SET start_time = ?, end_time = ?, status = ? WHERE title = ?',
+      const result = await client.query(
+        'UPDATE contests SET start_time = $1, end_time = $2, status = $3 WHERE title = $4',
         [u.start, u.end, u.status, u.title]
       );
-      if (result.affectedRows > 0) {
+      if (result.rowCount > 0) {
         console.log(`  ✓ ${u.title} → ${u.status} (${u.start} to ${u.end})`);
       } else {
         console.log(`  ⚠ ${u.title} not found (skipped)`);
@@ -40,52 +51,64 @@ async function refreshDates() {
     console.error('❌ Date refresh failed:', err.message);
     process.exit(1);
   } finally {
-    if (connection) await connection.end();
+    if (client) await client.end();
   }
 }
 
 // ── Full seed mode (TRUNCATES everything) ──
 async function seed() {
-  let connection;
+  let client;
   try {
-    connection = await mysql.createConnection({ ...DB_CONFIG, database: DB_NAME });
+    client = new Client(
+      process.env.DATABASE_URL
+        ? { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
+        : {
+            host: process.env.DB_HOST || 'localhost',
+            port: parseInt(process.env.DB_PORT || '5432'),
+            user: process.env.DB_USER || 'postgres',
+            password: process.env.DB_PASSWORD || '',
+            database: process.env.DB_NAME || 'codearena'
+          }
+    );
+    await client.connect();
     console.log('🌱 Seeding database (FULL RESET)...\n');
 
-    // Clear tables
-    await connection.execute('SET FOREIGN_KEY_CHECKS = 0');
+    // Clear tables using CASCADE
     const tables = ['track_problems', 'learning_tracks', 'user_badges', 'submissions', 'participations', 'contest_problems', 'test_cases', 'problem_tags', 'notifications', 'problems', 'contests', 'users'];
     for (const t of tables) {
-      await connection.execute(`TRUNCATE TABLE ${t}`);
+      await client.query(`TRUNCATE TABLE ${t} RESTART IDENTITY CASCADE`);
     }
-    await connection.execute('SET FOREIGN_KEY_CHECKS = 1');
 
     // ── Users ──
     const salt = await bcrypt.genSalt(10);
-    const adminPass = await bcrypt.hash('admin123', salt);
-    const userPass = await bcrypt.hash('user123', salt);
+    const adminPass = await bcrypt.hash('@admin123', salt);
+    const sayanPass = await bcrypt.hash('@sayan123', salt);
+    const alicePass = await bcrypt.hash('@alice123', salt);
+    const bobPass = await bcrypt.hash('@bob123', salt);
+    const charliePass = await bcrypt.hash('@charlie123', salt);
 
-    await connection.execute(`INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)`, ['admin', 'admin@codearena.com', adminPass, 'ADMIN']);
-    await connection.execute(`INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)`, ['sayan', 'sayan@codearena.com', userPass, 'USER']);
-    await connection.execute(`INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)`, ['alice', 'alice@codearena.com', userPass, 'USER']);
-    await connection.execute(`INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)`, ['bob', 'bob@codearena.com', userPass, 'USER']);
-    await connection.execute(`INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)`, ['charlie', 'charlie@codearena.com', userPass, 'USER']);
+    await client.query(`INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4)`, ['admin', 'admin@codearena.com', adminPass, 'ADMIN']);
+    await client.query(`INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4)`, ['sayan', 'sayan@codearena.com', sayanPass, 'USER']);
+    await client.query(`INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4)`, ['alice', 'alice@codearena.com', alicePass, 'USER']);
+    await client.query(`INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4)`, ['bob', 'bob@codearena.com', bobPass, 'USER']);
+    await client.query(`INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4)`, ['charlie', 'charlie@codearena.com', charliePass, 'USER']);
     console.log('  ✓ 5 users (1 admin + 4 users)');
 
     // ── Contests ──
-    await connection.execute(
-      `INSERT INTO contests (title, description, start_time, end_time, status) VALUES (?, ?, ?, ?, ?)`,
+    await client.query(
+      `INSERT INTO contests (title, description, start_time, end_time, status) VALUES ($1, $2, $3, $4, $5)`,
       ['Weekly Challenge #1', 'Weekly coding contest featuring classic algorithmic challenges. Solve problems using any language you prefer.', hoursAgo(2), hoursFromNow(22), 'ONGOING']
     );
-    await connection.execute(
-      `INSERT INTO contests (title, description, start_time, end_time, status) VALUES (?, ?, ?, ?, ?)`,
+    await client.query(
+      `INSERT INTO contests (title, description, start_time, end_time, status) VALUES ($1, $2, $3, $4, $5)`,
       ['Data Structures Sprint', 'A 2-day sprint focused on data structure problems — trees, graphs, and arrays.', hoursAgo(1), hoursFromNow(47), 'ONGOING']
     );
-    await connection.execute(
-      `INSERT INTO contests (title, description, start_time, end_time, status) VALUES (?, ?, ?, ?, ?)`,
+    await client.query(
+      `INSERT INTO contests (title, description, start_time, end_time, status) VALUES ($1, $2, $3, $4, $5)`,
       ['Monthly Marathon', 'Monthly competitive programming marathon with hard problems and big prizes.', daysFromNow(3), daysFromNow(4), 'UPCOMING']
     );
-    await connection.execute(
-      `INSERT INTO contests (title, description, start_time, end_time, status) VALUES (?, ?, ?, ?, ?)`,
+    await client.query(
+      `INSERT INTO contests (title, description, start_time, end_time, status) VALUES ($1, $2, $3, $4, $5)`,
       ['Beginner Bootcamp', 'A beginner-friendly contest with easy problems to get you started.', daysAgo(6), daysAgo(5), 'ENDED']
     );
     console.log('  ✓ 4 contests (2 ongoing, 1 upcoming, 1 ended)');
@@ -105,83 +128,83 @@ async function seed() {
     ];
 
     for (const [title, desc, diff, score, editorial] of problems) {
-      await connection.execute(
-        `INSERT INTO problems (title, description, difficulty, max_score, editorial) VALUES (?, ?, ?, ?, ?)`,
+      await client.query(
+        `INSERT INTO problems (title, description, difficulty, max_score, editorial) VALUES ($1, $2, $3, $4, $5)`,
         [title, desc, diff, score, editorial || null]
       );
     }
     console.log('  ✓ 10 problems (3 easy, 4 medium, 3 hard)');
 
     // ── Contest-Problem mappings ──
-    await connection.execute(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (1, 1)`);
-    await connection.execute(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (1, 4)`);
-    await connection.execute(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (1, 5)`);
-    await connection.execute(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (1, 8)`);
-    await connection.execute(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (2, 2)`);
-    await connection.execute(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (2, 3)`);
-    await connection.execute(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (2, 6)`);
-    await connection.execute(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (2, 7)`);
-    await connection.execute(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (2, 9)`);
-    await connection.execute(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (3, 5)`);
-    await connection.execute(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (3, 7)`);
-    await connection.execute(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (3, 8)`);
-    await connection.execute(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (3, 9)`);
-    await connection.execute(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (3, 10)`);
-    await connection.execute(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (4, 1)`);
-    await connection.execute(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (4, 2)`);
-    await connection.execute(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (4, 3)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (1, 1)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (1, 4)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (1, 5)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (1, 8)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (2, 2)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (2, 3)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (2, 6)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (2, 7)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (2, 9)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (3, 5)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (3, 7)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (3, 8)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (3, 9)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (3, 10)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (4, 1)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (4, 2)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (4, 3)`);
     console.log('  ✓ contest-problem mappings');
 
     // ── Participations ──
-    await connection.execute(`INSERT INTO participations (user_id, contest_id) VALUES (2, 1)`);
-    await connection.execute(`INSERT INTO participations (user_id, contest_id) VALUES (3, 1)`);
-    await connection.execute(`INSERT INTO participations (user_id, contest_id) VALUES (4, 1)`);
-    await connection.execute(`INSERT INTO participations (user_id, contest_id) VALUES (2, 2)`);
-    await connection.execute(`INSERT INTO participations (user_id, contest_id) VALUES (5, 2)`);
-    await connection.execute(`INSERT INTO participations (user_id, contest_id) VALUES (2, 4)`);
-    await connection.execute(`INSERT INTO participations (user_id, contest_id) VALUES (3, 4)`);
-    await connection.execute(`INSERT INTO participations (user_id, contest_id) VALUES (4, 4)`);
+    await client.query(`INSERT INTO participations (user_id, contest_id) VALUES (2, 1)`);
+    await client.query(`INSERT INTO participations (user_id, contest_id) VALUES (3, 1)`);
+    await client.query(`INSERT INTO participations (user_id, contest_id) VALUES (4, 1)`);
+    await client.query(`INSERT INTO participations (user_id, contest_id) VALUES (2, 2)`);
+    await client.query(`INSERT INTO participations (user_id, contest_id) VALUES (5, 2)`);
+    await client.query(`INSERT INTO participations (user_id, contest_id) VALUES (2, 4)`);
+    await client.query(`INSERT INTO participations (user_id, contest_id) VALUES (3, 4)`);
+    await client.query(`INSERT INTO participations (user_id, contest_id) VALUES (4, 4)`);
     console.log('  ✓ participations');
 
     // ── Submissions ──
-    await connection.execute(
-      `INSERT INTO submissions (user_id, contest_id, problem_id, code, language, score) VALUES (?, ?, ?, ?, ?, ?)`,
+    await client.query(
+      `INSERT INTO submissions (user_id, contest_id, problem_id, code, language, score) VALUES ($1, $2, $3, $4, $5, $6)`,
       [2, 1, 1, 'function twoSum(nums, target) {\n  const map = {};\n  for (let i = 0; i < nums.length; i++) {\n    const complement = target - nums[i];\n    if (map[complement] !== undefined) return [map[complement], i];\n    map[nums[i]] = i;\n  }\n}', 'javascript', 100]
     );
-    await connection.execute(
-      `INSERT INTO submissions (user_id, contest_id, problem_id, code, language, score) VALUES (?, ?, ?, ?, ?, ?)`,
+    await client.query(
+      `INSERT INTO submissions (user_id, contest_id, problem_id, code, language, score) VALUES ($1, $2, $3, $4, $5, $6)`,
       [2, 1, 4, 'def lengthOfLongestSubstring(s):\n    chars = set()\n    left = result = 0\n    for right in range(len(s)):\n        while s[right] in chars:\n            chars.remove(s[left])\n            left += 1\n        chars.add(s[right])\n        result = max(result, right - left + 1)\n    return result', 'python', 180]
     );
-    await connection.execute(
-      `INSERT INTO submissions (user_id, contest_id, problem_id, code, language, score) VALUES (?, ?, ?, ?, ?, ?)`,
+    await client.query(
+      `INSERT INTO submissions (user_id, contest_id, problem_id, code, language, score) VALUES ($1, $2, $3, $4, $5, $6)`,
       [3, 1, 1, 'class Solution {\n  public int[] twoSum(int[] nums, int target) {\n    Map<Integer, Integer> map = new HashMap<>();\n    for (int i = 0; i < nums.length; i++) {\n      int comp = target - nums[i];\n      if (map.containsKey(comp)) return new int[]{map.get(comp), i};\n      map.put(nums[i], i);\n    }\n    return new int[]{};\n  }\n}', 'java', 100]
     );
-    await connection.execute(
-      `INSERT INTO submissions (user_id, contest_id, problem_id, code, language, score) VALUES (?, ?, ?, ?, ?, ?)`,
+    await client.query(
+      `INSERT INTO submissions (user_id, contest_id, problem_id, code, language, score) VALUES ($1, $2, $3, $4, $5, $6)`,
       [3, 1, 4, 'int lengthOfLongestSubstring(string s) {\n  unordered_set<char> chars;\n  int left = 0, result = 0;\n  for (int right = 0; right < s.size(); right++) {\n    while (chars.count(s[right])) chars.erase(s[left++]);\n    chars.insert(s[right]);\n    result = max(result, right - left + 1);\n  }\n  return result;\n}', 'cpp', 200]
     );
-    await connection.execute(
-      `INSERT INTO submissions (user_id, contest_id, problem_id, code, language, score) VALUES (?, ?, ?, ?, ?, ?)`,
+    await client.query(
+      `INSERT INTO submissions (user_id, contest_id, problem_id, code, language, score) VALUES ($1, $2, $3, $4, $5, $6)`,
       [4, 1, 1, 'vector<int> twoSum(vector<int>& nums, int target) {\n  unordered_map<int, int> m;\n  for (int i = 0; i < nums.size(); i++) {\n    if (m.count(target - nums[i])) return {m[target - nums[i]], i};\n    m[nums[i]] = i;\n  }\n  return {};\n}', 'cpp', 80]
     );
-    await connection.execute(
-      `INSERT INTO submissions (user_id, contest_id, problem_id, code, language, score) VALUES (?, ?, ?, ?, ?, ?)`,
+    await client.query(
+      `INSERT INTO submissions (user_id, contest_id, problem_id, code, language, score) VALUES ($1, $2, $3, $4, $5, $6)`,
       [2, 2, 2, 'def reverseString(s):\n    left, right = 0, len(s) - 1\n    while left < right:\n        s[left], s[right] = s[right], s[left]\n        left += 1\n        right -= 1', 'python', 100]
     );
-    await connection.execute(
-      `INSERT INTO submissions (user_id, contest_id, problem_id, code, language, score) VALUES (?, ?, ?, ?, ?, ?)`,
+    await client.query(
+      `INSERT INTO submissions (user_id, contest_id, problem_id, code, language, score) VALUES ($1, $2, $3, $4, $5, $6)`,
       [5, 2, 3, 'bool isPalindrome(int x) {\n  if (x < 0) return false;\n  int rev = 0, original = x;\n  while (x > 0) {\n    rev = rev * 10 + x % 10;\n    x /= 10;\n  }\n  return original == rev;\n}', 'cpp', 100]
     );
-    await connection.execute(
-      `INSERT INTO submissions (user_id, contest_id, problem_id, code, language, score) VALUES (?, ?, ?, ?, ?, ?)`,
+    await client.query(
+      `INSERT INTO submissions (user_id, contest_id, problem_id, code, language, score) VALUES ($1, $2, $3, $4, $5, $6)`,
       [2, 4, 1, 'const twoSum = (nums, target) => {\n  for (let i = 0; i < nums.length; i++)\n    for (let j = i+1; j < nums.length; j++)\n      if (nums[i] + nums[j] === target) return [i, j];\n}', 'javascript', 90]
     );
-    await connection.execute(
-      `INSERT INTO submissions (user_id, contest_id, problem_id, code, language, score) VALUES (?, ?, ?, ?, ?, ?)`,
+    await client.query(
+      `INSERT INTO submissions (user_id, contest_id, problem_id, code, language, score) VALUES ($1, $2, $3, $4, $5, $6)`,
       [3, 4, 2, 'void reverseString(vector<char>& s) {\n  int l = 0, r = s.size()-1;\n  while (l < r) swap(s[l++], s[r--]);\n}', 'cpp', 100]
     );
-    await connection.execute(
-      `INSERT INTO submissions (user_id, contest_id, problem_id, code, language, score) VALUES (?, ?, ?, ?, ?, ?)`,
+    await client.query(
+      `INSERT INTO submissions (user_id, contest_id, problem_id, code, language, score) VALUES ($1, $2, $3, $4, $5, $6)`,
       [4, 4, 3, 'def isPalindrome(x):\n    return str(x) == str(x)[::-1]', 'python', 100]
     );
     console.log('  ✓ 10 submissions');
@@ -201,7 +224,7 @@ async function seed() {
     ];
     for (const [pid, tags] of tagMap) {
       for (const tag of tags) {
-        await connection.execute('INSERT INTO problem_tags (problem_id, tag) VALUES (?, ?)', [pid, tag]);
+        await client.query('INSERT INTO problem_tags (problem_id, tag) VALUES ($1, $2)', [pid, tag]);
       }
     }
     console.log('  ✓ problem tags');
@@ -221,62 +244,72 @@ async function seed() {
       [4, 'pwwkew', '3', false],
       [5, '1 3\n2 6\n8 10\n15 18', '1 6\n8 10\n15 18', true],
       [5, '1 4\n4 5', '1 5', true],
+      [6, '3 9 20 null null 15 7', '[[3],[9,20],[15,7]]', true],
+      [7, '1 8 6 2 5 4 8 3 7', '49', true],
+      [7, '1 1', '1', true],
+      [8, '1 3\n2', '2.00000', true],
+      [8, '1 2\n3 4', '2.50000', true],
+      [9, '0 1 0 2 1 0 1 3 2 1 2 1', '6', true],
+      [9, '4 2 0 3 2 5', '9', true],
+      [10, 'aa\na', 'false', true],
+      [10, 'aa\na*', 'true', true],
+      [10, 'ab\n.*', 'true', true]
     ];
     for (const [pid, input, output, sample] of testCases) {
-      await connection.execute(
-        'INSERT INTO test_cases (problem_id, input, expected_output, is_sample) VALUES (?, ?, ?, ?)',
+      await client.query(
+        'INSERT INTO test_cases (problem_id, input, expected_output, is_sample) VALUES ($1, $2, $3, $4)',
         [pid, input, output, sample]
       );
     }
     console.log('  ✓ test cases');
 
     // ── Welcome Notifications ──
-    await connection.execute(
-      'INSERT INTO notifications (user_id, message, type) VALUES (?, ?, ?)',
+    await client.query(
+      'INSERT INTO notifications (user_id, message, type) VALUES ($1, $2, $3)',
       [2, 'Welcome to CodeArena! Start by joining a contest.', 'info']
     );
-    await connection.execute(
-      'INSERT INTO notifications (user_id, message, type) VALUES (?, ?, ?)',
+    await client.query(
+      'INSERT INTO notifications (user_id, message, type) VALUES ($1, $2, $3)',
       [2, 'Your solution for "Two Sum" scored 100/100', 'success']
     );
     console.log('  ✓ notifications');
 
     // ── User Badges ──
-    await connection.execute('INSERT INTO user_badges (user_id, badge_name) VALUES (?, ?)', [2, 'First Blood']);
-    await connection.execute('INSERT INTO user_badges (user_id, badge_name) VALUES (?, ?)', [2, '10-Streak']);
-    await connection.execute('INSERT INTO user_badges (user_id, badge_name) VALUES (?, ?)', [3, 'First Blood']);
+    await client.query('INSERT INTO user_badges (user_id, badge_name) VALUES ($1, $2)', [2, 'First Blood']);
+    await client.query('INSERT INTO user_badges (user_id, badge_name) VALUES ($1, $2)', [2, '10-Streak']);
+    await client.query('INSERT INTO user_badges (user_id, badge_name) VALUES ($1, $2)', [3, 'First Blood']);
     console.log('  ✓ user badges');
 
     // ── User Ratings Update (Mock Data) ──
-    await connection.execute('UPDATE users SET rating = 1650 WHERE user_id = 2');
-    await connection.execute('UPDATE users SET rating = 1580 WHERE user_id = 3');
-    await connection.execute('UPDATE users SET rating = 1510 WHERE user_id = 4');
+    await client.query('UPDATE users SET rating = 1650 WHERE user_id = 2');
+    await client.query('UPDATE users SET rating = 1580 WHERE user_id = 3');
+    await client.query('UPDATE users SET rating = 1510 WHERE user_id = 4');
 
     // ── Learning Tracks ──
-    await connection.execute(
-      `INSERT INTO learning_tracks (title, description, difficulty) VALUES (?, ?, ?)`,
+    await client.query(
+      `INSERT INTO learning_tracks (title, description, difficulty) VALUES ($1, $2, $3)`,
       ['Algorithms 101', 'Master the basics of algorithms including sorting, searching, and fundamental math.', 'BEGINNER']
     );
-    await connection.execute(
-      `INSERT INTO learning_tracks (title, description, difficulty) VALUES (?, ?, ?)`,
+    await client.query(
+      `INSERT INTO learning_tracks (title, description, difficulty) VALUES ($1, $2, $3)`,
       ['Data Structures Mastery', 'Deep dive into arrays, strings, hash tables, and linked lists.', 'INTERMEDIATE']
     );
-    await connection.execute(
-      `INSERT INTO learning_tracks (title, description, difficulty) VALUES (?, ?, ?)`,
+    await client.query(
+      `INSERT INTO learning_tracks (title, description, difficulty) VALUES ($1, $2, $3)`,
       ['Advanced Graph Theory', 'Conquer complex graph algorithms like Dijkstra, Bellman-Ford, and A*.', 'ADVANCED']
     );
     console.log('  ✓ 3 learning tracks');
 
     // ── Track Problems ──
     // Algorithms 101: Two Sum (1), Reverse String (2), Palindrome Number (3)
-    await connection.execute(`INSERT INTO track_problems (track_id, problem_id, sequence_order) VALUES (1, 1, 1)`);
-    await connection.execute(`INSERT INTO track_problems (track_id, problem_id, sequence_order) VALUES (1, 2, 2)`);
-    await connection.execute(`INSERT INTO track_problems (track_id, problem_id, sequence_order) VALUES (1, 3, 3)`);
+    await client.query(`INSERT INTO track_problems (track_id, problem_id, sequence_order) VALUES (1, 1, 1)`);
+    await client.query(`INSERT INTO track_problems (track_id, problem_id, sequence_order) VALUES (1, 2, 2)`);
+    await client.query(`INSERT INTO track_problems (track_id, problem_id, sequence_order) VALUES (1, 3, 3)`);
     
     // Data Structures Mastery: Merge Intervals (5), Container With Most Water (7), Trapping Rain Water (9)
-    await connection.execute(`INSERT INTO track_problems (track_id, problem_id, sequence_order) VALUES (2, 5, 1)`);
-    await connection.execute(`INSERT INTO track_problems (track_id, problem_id, sequence_order) VALUES (2, 7, 2)`);
-    await connection.execute(`INSERT INTO track_problems (track_id, problem_id, sequence_order) VALUES (2, 9, 3)`);
+    await client.query(`INSERT INTO track_problems (track_id, problem_id, sequence_order) VALUES (2, 5, 1)`);
+    await client.query(`INSERT INTO track_problems (track_id, problem_id, sequence_order) VALUES (2, 7, 2)`);
+    await client.query(`INSERT INTO track_problems (track_id, problem_id, sequence_order) VALUES (2, 9, 3)`);
     console.log('  ✓ track-problem mappings');
 
     console.log('\n🎉 Database seeded successfully!');
@@ -284,7 +317,7 @@ async function seed() {
     console.error('❌ Seeding failed:', err.message);
     process.exit(1);
   } finally {
-    if (connection) await connection.end();
+    if (client) await client.end();
   }
 }
 

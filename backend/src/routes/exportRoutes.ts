@@ -12,23 +12,25 @@ router.get('/leaderboard/:contest_id', protect, admin, async (req: Request, res:
         let rows;
 
         if (contest_id === 'global') {
-            [rows] = await pool.execute(
+            const result = await pool.query(
                 `SELECT u.username, u.email, u.rating, SUM(s.score) AS total_score, COUNT(s.submission_id) AS submissions
                  FROM users u
                  LEFT JOIN submissions s ON u.user_id = s.user_id
                  GROUP BY u.user_id, u.username, u.email, u.rating
                  ORDER BY u.rating DESC, total_score DESC`
             );
+            rows = result.rows;
         } else {
-            [rows] = await pool.execute(
+            const result = await pool.query(
                 `SELECT u.username, u.email, SUM(s.score) AS total_score, COUNT(s.submission_id) AS submissions
                  FROM submissions s
                  JOIN users u ON s.user_id = u.user_id
-                 WHERE s.contest_id = ?
+                 WHERE s.contest_id = $1
                  GROUP BY u.user_id, u.username, u.email
                  ORDER BY total_score DESC`,
                 [contest_id]
             );
+            rows = result.rows;
         }
 
         if (rows.length === 0) {
@@ -52,7 +54,7 @@ router.get('/leaderboard/:contest_id', protect, admin, async (req: Request, res:
 // ── Export Submissions to CSV ──
 router.get('/submissions', protect, admin, async (req: Request, res: Response): Promise<void> => {
     try {
-        const [rows]: any = await pool.execute(
+        const result: any = await pool.query(
             `SELECT s.submission_id, u.username, c.title AS contest, p.title AS problem, s.language, s.score, s.submission_time
              FROM submissions s
              JOIN users u ON s.user_id = u.user_id
@@ -60,6 +62,7 @@ router.get('/submissions', protect, admin, async (req: Request, res: Response): 
              JOIN problems p ON s.problem_id = p.problem_id
              ORDER BY s.submission_time DESC`
         );
+        const rows = result.rows;
 
         if (rows.length === 0) {
             res.status(404).json({ error: 'No submissions to export' });

@@ -2,8 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 const { pool } = require('../config/db');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey_for_codearena';
-
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is not set');
 export interface AuthRequest extends Request {
     user?: {
         user_id: number;
@@ -27,10 +27,11 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
 
         const decoded: any = jwt.verify(token, JWT_SECRET);
 
-        const [rows]: any = await pool.execute(
-            'SELECT user_id, username, role FROM users WHERE user_id = ?',
+        const result = await pool.query(
+            'SELECT user_id, username, role FROM users WHERE user_id = $1',
             [decoded.userId]
         );
+        const rows = result.rows;
 
         if (rows.length === 0) {
             res.status(401).json({ error: 'Not authorized, user not found' });

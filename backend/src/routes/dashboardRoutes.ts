@@ -7,19 +7,21 @@ const router = express.Router();
 // Platform statistics
 router.get('/stats', async (req: Request, res: Response): Promise<void> => {
     try {
-        const [rows]: any = await pool.execute(
+        const result: any = await pool.query(
             `SELECT
                 (SELECT COUNT(*) FROM contests) AS totalContests,
                 (SELECT COUNT(*) FROM problems) AS totalProblems,
                 (SELECT COUNT(*) FROM submissions) AS totalSubmissions,
                 (SELECT COUNT(*) FROM users) AS totalUsers`
         );
+        const rows = result.rows;
 
-        res.json(rows?.[0] ?? {
-            totalContests: 0,
-            totalProblems: 0,
-            totalSubmissions: 0,
-            totalUsers: 0
+        const row = result.rows[0] || {};
+        res.json({
+            totalContests: parseInt(row.totalcontests || 0),
+            totalProblems: parseInt(row.totalproblems || 0),
+            totalSubmissions: parseInt(row.totalsubmissions || 0),
+            totalUsers: parseInt(row.totalusers || 0)
         });
     } catch (err: any) {
         res.status(500).json({ error: err.message });

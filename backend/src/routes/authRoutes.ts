@@ -7,7 +7,8 @@ const { pool } = require('../config/db');
 
 const router = express.Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey_for_codearena';
+const JWT_SECRET: string = process.env.JWT_SECRET as string;
+if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is not set');
 
 function generateToken(userId: number, role: string) {
     return jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: '1d' });
@@ -26,15 +27,16 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
         const salt = await bcrypt.genSalt(10);
         const hashed = await bcrypt.hash(password, salt);
 
-        const [result]: any = await pool.execute(
-            'INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)',
+        const result = await pool.query(
+            'INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4) RETURNING user_id',
             [username, email, hashed, role || 'USER']
         );
+        const newUserId = result.rows[0].user_id;
 
-        const token = generateToken(result.insertId, role || 'USER');
+        const token = generateToken(newUserId, role || 'USER');
 
         res.status(201).json({
-            user_id: result.insertId,
+            user_id: newUserId,
             username, email,
             role: role || 'USER',
             token
@@ -58,7 +60,8 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        const [rows]: any = await pool.execute('SELECT * FROM users WHERE email = ?', [email]);
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        const rows = result.rows;
 
         if (rows.length === 0) {
             res.status(401).json({ error: 'Invalid email or password' });
@@ -90,9 +93,10 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
 // Get all users (admin only)
 router.get('/users', protect, admin, async (req: Request, res: Response): Promise<void> => {
     try {
-        const [rows]: any = await pool.execute(
+        const result = await pool.query(
             'SELECT user_id, username, email, role, created_at FROM users ORDER BY user_id'
         );
+        const rows = result.rows;
         res.json(rows);
     } catch (err: any) {
         res.status(500).json({ error: err.message });
@@ -102,10 +106,11 @@ router.get('/users', protect, admin, async (req: Request, res: Response): Promis
 // Get current user
 router.get('/me', protect, async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        const [rows]: any = await pool.execute(
-            'SELECT user_id, username, email, role, created_at FROM users WHERE user_id = ?',
+        const result = await pool.query(
+            'SELECT user_id, username, email, role, created_at FROM users WHERE user_id = $1',
             [req.user?.user_id]
         );
+        const rows = result.rows;
         if (rows.length === 0) { res.status(404).json({ error: 'User not found' }); return; }
         res.json(rows[0]);
     } catch (err: any) {
@@ -124,15 +129,17 @@ router.put('/me', protect, async (req: AuthRequest, res: Response): Promise<void
 
         const updates: string[] = [];
         const params: any[] = [];
-        if (username) { updates.push('username = ?'); params.push(username); }
-        if (email) { updates.push('email = ?'); params.push(email); }
+        if (username) { params.push(username); updates.push(`username = $${params.length}`); }
+        if (email) { params.push(email); updates.push(`email = $${params.length}`); }
+        
         params.push(req.user?.user_id);
+        const userIdIndex = params.length;
 
-        const [result]: any = await pool.execute(
-            `UPDATE users SET ${updates.join(', ')} WHERE user_id = ?`, params
+        const result = await pool.query(
+            `UPDATE users SET ${updates.join(', ')} WHERE user_id = $${userIdIndex}`, params
         );
 
-        if (result.affectedRows === 0) { res.status(404).json({ error: 'User not found' }); return; }
+        if (result.rowCount === 0) { res.status(404).json({ error: 'User not found' }); return; }
         res.json({ message: 'Profile updated successfully' });
     } catch (err: any) {
         if (err.code === 'ER_DUP_ENTRY') {
@@ -157,7 +164,8 @@ router.put('/me/password', protect, async (req: AuthRequest, res: Response): Pro
             return;
         }
 
-        const [rows]: any = await pool.execute('SELECT password FROM users WHERE user_id = ?', [req.user?.user_id]);
+        const result = await pool.query('SELECT password FROM users WHERE user_id = $1', [req.user?.user_id]);
+        const rows = result.rows;
         if (rows.length === 0) { res.status(404).json({ error: 'User not found' }); return; }
 
         const isMatch = await bcrypt.compare(currentPassword, rows[0].password);
@@ -165,7 +173,7 @@ router.put('/me/password', protect, async (req: AuthRequest, res: Response): Pro
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(newPassword, salt);
-        await pool.execute('UPDATE users SET password = ? WHERE user_id = ?', [hashedPassword, req.user?.user_id]);
+        await pool.query('UPDATE users SET password = $1 WHERE user_id = $2', [hashedPassword, req.user?.user_id]);
 
         res.json({ message: 'Password changed successfully' });
     } catch (err: any) {

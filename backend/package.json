@@ -7,7 +7,8 @@
     "start": "tsx src/server.ts",
     "dev": "tsx watch src/server.ts",
     "seed": "node seed.js",
-    "setup": "node database.js && node seed.js"
+    "setup": "tsx src/config/db.ts && node seed.js",
+    "build": "tsc"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -16,14 +17,14 @@
     "dotenv": "^17.3.1",
     "express": "^4.21.0",
     "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.11.0",
-    "socket.io": "^4.8.3"
+    "pg": "^8.13.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/pg": "^8.11.10",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }

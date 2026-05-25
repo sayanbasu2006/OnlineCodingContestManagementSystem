@@ -9,7 +9,6 @@ import ContestDetail from "./pages/ContestDetail";
 import Problems from "./pages/Problems";
 import ProblemDetails from "./pages/ProblemDetails";
 import Leaderboard from "./pages/Leaderboard";
-import Submit from "./pages/Submit";
 import MySubmissions from "./pages/MySubmissions";
 import AdminPanel from "./pages/AdminPanel";
 import Profile from "./pages/Profile";
@@ -116,56 +115,83 @@ function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="layout">
-      {!isLocked && (
-        <aside className={`sidebar ${mobileMenuOpen ? "sidebar-open" : ""}`}>
-          <div className="brand"><div className="brand-mark" /><div className="brand-text"><span className="brand-title">CodeArena</span><span className="brand-subtitle">Coding Contest</span></div></div>
-          <nav className="sidebar-nav">
-            <NavLink to="/" end className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">📊</span> Dashboard</NavLink>
-            <NavLink to="/contests" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">🏆</span> Contests</NavLink>
-            <NavLink to="/problems" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">📝</span> Problems</NavLink>
-            <NavLink to="/tracks" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">🗺️</span> Tracks</NavLink>
-            <NavLink to="/leaderboard" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">🏅</span> Leaderboard</NavLink>
-            {isAuthenticated && (<>
-              <NavLink to="/submit" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">🚀</span> Submit</NavLink>
-              <NavLink to="/submissions" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">📋</span> My Submissions</NavLink>
-              <NavLink to="/profile" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">👤</span> Profile</NavLink>
-            </>)}
-            {isAuthenticated && user?.role === "ADMIN" && (
-              <NavLink to="/admin" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">⚙️</span> Admin Panel</NavLink>
-            )}
-          </nav>
-          <div className="sidebar-footer"><div className="status-dot" /><span>System Healthy</span></div>
-        </aside>
-      )}
-
-      <div className="main">
-        {isLocked ? (
-          <header className="navbar locked-navbar">
-            <div className="locked-warning"><span className="locked-icon">⚠️</span><span>Exam in Progress</span></div>
-            <div className="timer-display"><span className="timer-label">Time Remaining</span><span className="timer-value">{timer.text}</span></div>
-            <button onClick={() => setShowFinishConfirm(true)} className="btn-finish-exam">Finish Exam</button>
-          </header>
-        ) : (
-          <header className="navbar">
-            <div className="navbar-left">
-              <button className="mobile-menu-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu">{mobileMenuOpen ? "✕" : "☰"}</button>
-              <h2>CodeArena</h2>
+      {isLocked ? (
+        <header className="navbar locked-navbar">
+          <div className="locked-warning"><span className="locked-icon">⚠️</span><span>Exam in Progress</span></div>
+          <div className="timer-display"><span className="timer-label">Time Remaining</span><span className="timer-value">{timer.text}</span></div>
+          <button onClick={() => setShowFinishConfirm(true)} className="btn-finish-exam">Finish Exam</button>
+        </header>
+      ) : (
+        <header className="top-navbar">
+          <div className="top-navbar-container">
+            <div className="top-navbar-left">
+              <div className="brand">
+                <div className="brand-mark" />
+                <span className="brand-title">CodeArena</span>
+              </div>
+              <nav className="top-nav-links">
+                <NavLink to="/" end className={({ isActive }) => isActive ? "active" : ""}>Dashboard</NavLink>
+                <NavLink to="/contests" className={({ isActive }) => isActive ? "active" : ""}>Contests</NavLink>
+                <NavLink to="/problems" className={({ isActive }) => isActive ? "active" : ""}>Problems</NavLink>
+                <NavLink to="/tracks" className={({ isActive }) => isActive ? "active" : ""}>Tracks</NavLink>
+                <NavLink to="/leaderboard" className={({ isActive }) => isActive ? "active" : ""}>Leaderboard</NavLink>
+                {isAuthenticated && user?.role === "ADMIN" && (
+                  <NavLink to="/admin" className={({ isActive }) => isActive ? "active" : ""}>Admin</NavLink>
+                )}
+              </nav>
             </div>
-            <div className="profile">
+            <div className="top-navbar-right">
+
               <button className="theme-toggle-btn" onClick={toggleTheme} aria-label="Toggle theme" title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
                 {theme === "dark" ? "☀️" : "🌙"}
               </button>
               {isAuthenticated && <NotificationBell />}
-              {isAuthenticated ? (<>
-                <NavLink to="/profile" className="user-badge"><span className="user-avatar">{user?.username?.charAt(0).toUpperCase()}</span>{user?.username}</NavLink>
-                <button onClick={handleLogout} className="btn-logout">Logout</button>
-              </>) : <NavLink to="/login" className="btn-login">Login</NavLink>}
+              {isAuthenticated ? (
+                <div className="user-menu-group">
+                  <NavLink to="/profile" className="user-badge">
+                    <span className="user-avatar">{user?.username?.charAt(0).toUpperCase()}</span>
+                    <span className="user-name-display">{user?.username}</span>
+                  </NavLink>
+                  <button onClick={handleLogout} className="btn-logout">Logout</button>
+                </div>
+              ) : (
+                <div className="auth-buttons">
+                  <NavLink to="/login" className="btn-secondary btn-sm">Login</NavLink>
+                  <NavLink to="/register" className="btn-primary btn-sm">Sign Up</NavLink>
+                </div>
+              )}
+              <button className="mobile-menu-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu">{mobileMenuOpen ? "✕" : "☰"}</button>
             </div>
-          </header>
-        )}
-        <div className="content">{children}</div>
-      </div>
+          </div>
+        </header>
+      )}
 
+      <main className="main-content">
+        <div className="content-container">{children}</div>
+      </main>
+
+      {mobileMenuOpen && !isLocked && (
+        <div className="mobile-dropdown-nav">
+          <nav>
+            <NavLink to="/" end onClick={() => setMobileMenuOpen(false)}>Dashboard</NavLink>
+            <NavLink to="/contests" onClick={() => setMobileMenuOpen(false)}>Contests</NavLink>
+            <NavLink to="/problems" onClick={() => setMobileMenuOpen(false)}>Problems</NavLink>
+            <NavLink to="/tracks" onClick={() => setMobileMenuOpen(false)}>Tracks</NavLink>
+            <NavLink to="/leaderboard" onClick={() => setMobileMenuOpen(false)}>Leaderboard</NavLink>
+            {isAuthenticated && (
+              <>
+                <NavLink to="/submit" onClick={() => setMobileMenuOpen(false)}>Submit</NavLink>
+                <NavLink to="/submissions" onClick={() => setMobileMenuOpen(false)}>My Submissions</NavLink>
+                <NavLink to="/profile" onClick={() => setMobileMenuOpen(false)}>Profile</NavLink>
+              </>
+            )}
+            {isAuthenticated && user?.role === "ADMIN" && (
+              <NavLink to="/admin" onClick={() => setMobileMenuOpen(false)}>Admin Panel</NavLink>
+            )}
+          </nav>
+        </div>
+      )}
+      
       {mobileMenuOpen && <div className="mobile-overlay" onClick={() => setMobileMenuOpen(false)} />}
       <ConfirmDialog open={showFinishConfirm} title="Finish Exam Early" message="Are you sure? You cannot undo this." confirmText="Finish Exam" variant="warning" onConfirm={handleFinishExam} onCancel={() => setShowFinishConfirm(false)} />
     </div>
@@ -213,7 +239,7 @@ function AnimatedRoutes() {
         <Route path="/tracks" element={<Layout><PageTransition><Tracks /></PageTransition></Layout>} />
         <Route path="/tracks/:id" element={<Layout><PageTransition><TrackDetails /></PageTransition></Layout>} />
         <Route path="/leaderboard" element={<Layout><PageTransition><Leaderboard /></PageTransition></Layout>} />
-        <Route path="/submit" element={<ProtectedRoute><Layout><PageTransition><Submit /></PageTransition></Layout></ProtectedRoute>} />
+
         <Route path="/submissions" element={<ProtectedRoute><Layout><PageTransition><MySubmissions /></PageTransition></Layout></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Layout><PageTransition><Profile /></PageTransition></Layout></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><Layout><PageTransition><AdminPanel /></PageTransition></Layout></ProtectedRoute>} />

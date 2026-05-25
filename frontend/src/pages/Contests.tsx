@@ -3,23 +3,23 @@ import { Link } from "react-router-dom";
 import { fetchContests, joinContest, fetchParticipations } from "../api/api";
 import { useAuth } from "../App";
 import { useToast } from "../components/Toast";
+import { motion } from "framer-motion";
 
-interface Contest { contest_id: number; title: string; description: string; start_time: string; end_time: string; status: "UPCOMING" | "ONGOING" | "ENDED"; participant_count?: number; }
+interface Contest { contest_id: number; title: string; description: string; start_time: string; end_time: string; status: "UPCOMING" | "ONGOING" | "ENDED"; participant_count?: number; duration_minutes: number; }
 
-function TimeLeft({ endTime, startTime, status }: { endTime: string; startTime: string; status: string }) {
+function TimeLeft({ targetTime, prefix = "" }: { targetTime: string; prefix?: string }) {
   const [text, setText] = useState("");
   useEffect(() => {
-    const targetTime = status === "UPCOMING" ? startTime : endTime;
     const update = () => {
       const diff = new Date(targetTime).getTime() - Date.now();
-      if (diff <= 0) { setText(status === "UPCOMING" ? "Starting..." : "Ended"); return; }
+      if (diff <= 0) { setText("Ended"); return; }
       const h = Math.floor(diff / 3600000); const m = Math.floor((diff % 3600000) / 60000);
-      if (h > 24) setText(`${Math.floor(h / 24)}d ${h % 24}h`); else setText(`${h}h ${m}m`);
+      if (h > 24) setText(`${prefix}${Math.floor(h / 24)}d ${h % 24}h`); else setText(`${prefix}${h}h ${m}m`);
     };
     update(); const id = setInterval(update, 60000); return () => clearInterval(id);
-  }, [endTime, startTime, status]);
+  }, [targetTime, prefix]);
   if (!text) return null;
-  return <span className="countdown-inline">{text}</span>;
+  return <span className="highlight-timer">{text}</span>;
 }
 
 export default function Contests() {
@@ -30,7 +30,6 @@ export default function Contests() {
   const { user, isAuthenticated } = useAuth();
   const { showToast } = useToast();
 
-  // Filters
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
@@ -56,34 +55,34 @@ export default function Contests() {
     });
   }, [contests, search, statusFilter]);
 
-  const statusBadge = (s: string) => s === "ONGOING" ? "badge-ongoing" : s === "UPCOMING" ? "badge-upcoming" : "badge-ended";
-  if (loading) return <div className="skeleton-block" />;
-
   const statusTabs = ["ALL", "ONGOING", "UPCOMING", "ENDED"];
 
+  if (loading) return <div className="skeleton-block" style={{ height: '600px' }} />;
+
   return (
-    <div>
-      <div className="page-header-row">
-        <h2>🏆 Contests</h2>
-        <span className="page-count">{filtered.length} contests</span>
+    <div className="contests-page">
+      <div className="page-header">
+        <div className="header-text">
+          <h1 className="hero-title">Contests Arena</h1>
+          <p className="hero-subtitle">Discover and compete in upcoming coding challenges.</p>
+        </div>
       </div>
 
-      {/* Filters */}
-      <div className="filter-bar">
-        <div className="filter-search">
+      <div className="filter-controls">
+        <div className="search-bar-mock">
+          <span className="search-icon">🔍</span>
           <input
             type="text"
-            placeholder="🔍 Search contests..."
+            placeholder="Search contests..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="filter-input"
           />
         </div>
-        <div className="filter-tabs">
+        <div className="tab-pills">
           {statusTabs.map((s) => (
             <button
               key={s}
-              className={`filter-tab ${statusFilter === s ? "active" : ""}`}
+              className={`tab-pill ${statusFilter === s ? "active" : ""}`}
               onClick={() => setStatusFilter(s)}
             >
               {s === "ALL" ? "All" : s.charAt(0) + s.slice(1).toLowerCase()}
@@ -92,28 +91,72 @@ export default function Contests() {
         </div>
       </div>
 
-      <div className="table-wrap">
-        <table>
-          <thead><tr><th>Name</th><th>Status</th><th>Participants</th><th>Time</th><th>Start</th><th>End</th><th>Action</th></tr></thead>
-          <tbody>
-            {filtered.length === 0 ? <tr><td colSpan={7}>No contests match your filters.</td></tr> :
-              filtered.map((c) => (
-                <tr key={c.contest_id}>
-                  <td><Link to={`/contests/${c.contest_id}`} className="table-link">{c.title}</Link></td>
-                  <td><span className={`status-badge ${statusBadge(c.status)}`}>{c.status}</span></td>
-                  <td><span className="participant-count">👥 {c.participant_count || 0}</span></td>
-                  <td>{c.status !== "ENDED" ? <TimeLeft endTime={c.end_time} startTime={c.start_time} status={c.status} /> : <span className="muted-text">—</span>}</td>
-                  <td>{new Date(c.start_time).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}</td>
-                  <td>{new Date(c.end_time).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}</td>
-                  <td>
-                    {participations.includes(c.contest_id) ? <Link to={`/contests/${c.contest_id}`} className="btn-small btn-accent">Enter →</Link>
-                    : c.status !== "ENDED" ? <button onClick={() => handleJoin(c.contest_id)} disabled={joining === c.contest_id} className="btn-small">{joining === c.contest_id ? "Joining..." : "Join"}</button>
-                    : <span className="muted-text">Ended</span>}
-                  </td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
+      <div className="contest-grid">
+        {filtered.length === 0 ? (
+          <div className="empty-state">No contests match your filters.</div>
+        ) : (
+          filtered.map((c, idx) => {
+            const isJoined = participations.includes(c.contest_id);
+            const isOngoing = c.status === "ONGOING";
+            const isUpcoming = c.status === "UPCOMING";
+            const isEnded = c.status === "ENDED";
+
+            return (
+              <motion.div 
+                className={`contest-card ${isOngoing ? "ongoing" : ""}`} 
+                key={c.contest_id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
+              >
+                <div className="contest-card-header">
+                  <span className={`badge badge-${c.status.toLowerCase()}`}>{c.status}</span>
+                  {isJoined && <span className="badge" style={{background: 'var(--surface-3)', color: 'var(--text)'}}>Registered</span>}
+                </div>
+                
+                <h3 className="contest-card-title">{c.title}</h3>
+                <p className="contest-card-desc">{c.description || "A competitive programming contest to test your algorithmic skills."}</p>
+                
+                <div className="contest-meta-grid">
+                  <div className="meta-box">
+                    <span className="meta-lbl">Duration</span>
+                    <span className="meta-val">{Math.floor((c.duration_minutes || 120) / 60)}h {(c.duration_minutes || 120) % 60}m</span>
+                  </div>
+                  <div className="meta-box">
+                    <span className="meta-lbl">Participants</span>
+                    <span className="meta-val">{c.participant_count || 0}</span>
+                  </div>
+                  <div className="meta-box timer-box">
+                    <span className="meta-lbl">{isOngoing ? "Ends In" : isUpcoming ? "Starts In" : "Ended On"}</span>
+                    <span className="meta-val">
+                      {isEnded ? new Date(c.end_time).toLocaleDateString() : <TimeLeft targetTime={isOngoing ? c.end_time : c.start_time} />}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="contest-card-actions">
+                  {isJoined ? (
+                    <Link to={`/contests/${c.contest_id}`} className="btn-primary full-width text-center" style={{ textDecoration: 'none' }}>
+                      {isOngoing ? "Enter Contest" : "View Details"}
+                    </Link>
+                  ) : isEnded ? (
+                    <Link to={`/contests/${c.contest_id}`} className="btn-secondary full-width text-center">
+                      View Results
+                    </Link>
+                  ) : (
+                    <button 
+                      onClick={() => handleJoin(c.contest_id)} 
+                      disabled={joining === c.contest_id} 
+                      className="btn-primary full-width"
+                    >
+                      {joining === c.contest_id ? "Joining..." : "Register Now"}
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })
+        )}
       </div>
     </div>
   );

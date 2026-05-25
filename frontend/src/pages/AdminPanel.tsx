@@ -40,9 +40,13 @@ function fromLocalDatetime(local: string) {
   return new Date(local).toISOString().slice(0, 19).replace("T", " ");
 }
 
+const API_BASE = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL + '/api'
+  : '/api';
+
 const handleExport = async (endpoint: string, filename: string) => {
   try {
-    const res = await fetch(`http://localhost:5001/api/export/${endpoint}`, {
+    const res = await fetch(`${API_BASE}/export/${endpoint}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
     });
     if (!res.ok) throw new Error("Failed to export");

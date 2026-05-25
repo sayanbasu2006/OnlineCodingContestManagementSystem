@@ -1,4 +1,6 @@
-const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5001') + '/api';
+const API_BASE = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL + '/api'
+  : '/api';
 
 function handleAuthError(res: Response) {
   if (res.status === 401) {
@@ -164,9 +166,3 @@ export const fetchTrackById = (trackId: number) =>
 export const fetchTrackProgress = (trackId: number) =>
   apiRequest(`${API_BASE}/tracks/${trackId}/progress`, { headers: getAuthHeaders() });
 
-export const getAiHint = (problemId: number, code: string, language: string) =>
-  apiRequest(`${API_BASE}/ai/hint`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ problemId, code, language })
-  });

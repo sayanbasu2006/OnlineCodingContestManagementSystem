@@ -115,30 +115,40 @@ function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="layout">
-      {isLocked ? (
-        <header className="navbar locked-navbar">
-          <div className="locked-warning"><span className="locked-icon">⚠️</span><span>Exam in Progress</span></div>
-          <div className="timer-display"><span className="timer-label">Time Remaining</span><span className="timer-value">{timer.text}</span></div>
-          <button onClick={() => setShowFinishConfirm(true)} className="btn-finish-exam">Finish Exam</button>
-        </header>
-      ) : (
-        <header className="top-navbar">
-          <div className="top-navbar-container">
-            <div className="top-navbar-left">
-              <div className="brand">
-                <div className="brand-mark" />
-                <span className="brand-title">CodeArena</span>
-              </div>
-              <nav className="top-nav-links">
-                <NavLink to="/" end className={({ isActive }) => isActive ? "active" : ""}>Dashboard</NavLink>
-                <NavLink to="/contests" className={({ isActive }) => isActive ? "active" : ""}>Contests</NavLink>
-                <NavLink to="/problems" className={({ isActive }) => isActive ? "active" : ""}>Problems</NavLink>
-                <NavLink to="/tracks" className={({ isActive }) => isActive ? "active" : ""}>Tracks</NavLink>
-                <NavLink to="/leaderboard" className={({ isActive }) => isActive ? "active" : ""}>Leaderboard</NavLink>
-                {isAuthenticated && user?.role === "ADMIN" && (
-                  <NavLink to="/admin" className={({ isActive }) => isActive ? "active" : ""}>Admin</NavLink>
-                )}
-              </nav>
+      {!isLocked && (
+        <aside className={`sidebar ${mobileMenuOpen ? "sidebar-open" : ""}`}>
+          <div className="brand"><img src="/logo.png" alt="CodeArena" className="brand-mark" /><div className="brand-text"><span className="brand-title">CodeArena</span><span className="brand-subtitle">Coding Contest</span></div></div>
+          <nav className="sidebar-nav">
+            <NavLink to="/" end className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">📊</span> Dashboard</NavLink>
+            <NavLink to="/contests" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">🏆</span> Contests</NavLink>
+            <NavLink to="/problems" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">📝</span> Problems</NavLink>
+            <NavLink to="/tracks" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">🗺️</span> Tracks</NavLink>
+            <NavLink to="/leaderboard" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">🏅</span> Leaderboard</NavLink>
+            {isAuthenticated && (<>
+              <NavLink to="/submit" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">🚀</span> Submit</NavLink>
+              <NavLink to="/submissions" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">📋</span> My Submissions</NavLink>
+              <NavLink to="/profile" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">👤</span> Profile</NavLink>
+            </>)}
+            {isAuthenticated && user?.role === "ADMIN" && (
+              <NavLink to="/admin" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">⚙️</span> Admin Panel</NavLink>
+            )}
+          </nav>
+          <div className="sidebar-footer"><div className="status-dot" /><span>System Healthy</span></div>
+        </aside>
+      )}
+
+      <div className="main">
+        {isLocked ? (
+          <header className="navbar locked-navbar">
+            <div className="locked-warning"><span className="locked-icon">⚠️</span><span>Exam in Progress</span></div>
+            <div className="timer-display"><span className="timer-label">Time Remaining</span><span className="timer-value">{timer.text}</span></div>
+            <button onClick={() => setShowFinishConfirm(true)} className="btn-finish-exam">Finish Exam</button>
+          </header>
+        ) : (
+          <header className="navbar">
+            <div className="navbar-left">
+              <button className="mobile-menu-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu">{mobileMenuOpen ? "✕" : "☰"}</button>
+              <h2>CodeArena</h2>
             </div>
             <div className="top-navbar-right">
 

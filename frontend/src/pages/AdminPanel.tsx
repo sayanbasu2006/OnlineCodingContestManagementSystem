@@ -4,6 +4,7 @@ import { useAuth } from "../App";
 import { useToast } from "../components/Toast";
 import ConfirmDialog from "../components/ConfirmDialog";
 import {
+  API_BASE,
   fetchContests,
   fetchProblems,
   fetchUsers,

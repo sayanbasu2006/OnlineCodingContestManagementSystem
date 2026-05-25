@@ -103,12 +103,41 @@ async function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS contest_problems (
         contest_id INT NOT NULL,
         problem_id INT NOT NULL,
+        sequence_order INT NOT NULL,
         PRIMARY KEY (contest_id, problem_id),
         FOREIGN KEY (contest_id) REFERENCES contests(contest_id) ON DELETE CASCADE,
         FOREIGN KEY (problem_id) REFERENCES problems(problem_id) ON DELETE CASCADE
       )
     `);
     console.log('  ✓ contest_problems');
+
+    await client.query(`
+      ALTER TABLE contest_problems
+      ADD COLUMN IF NOT EXISTS sequence_order INT
+    `);
+    await client.query(`
+      WITH ordered AS (
+        SELECT
+          contest_id,
+          problem_id,
+          ROW_NUMBER() OVER (PARTITION BY contest_id ORDER BY problem_id) AS next_order
+        FROM contest_problems
+        WHERE sequence_order IS NULL
+      )
+      UPDATE contest_problems cp
+      SET sequence_order = ordered.next_order
+      FROM ordered
+      WHERE cp.contest_id = ordered.contest_id
+        AND cp.problem_id = ordered.problem_id
+    `);
+    await client.query(`
+      ALTER TABLE contest_problems
+      ALTER COLUMN sequence_order SET NOT NULL
+    `);
+    await client.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_contest_problems_sequence
+      ON contest_problems(contest_id, sequence_order)
+    `);
 
     // ── SUBMISSION table ──
     await client.query(`
@@ -233,6 +262,15 @@ async function initializeDatabase() {
       )
     `);
     console.log('  ✓ track_problems');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_submissions_contest_user_problem_time
+      ON submissions(contest_id, user_id, problem_id, submission_time DESC)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_participations_user_contest_status
+      ON participations(user_id, contest_id, status)
+    `);
 
     console.log('\n🎉 All tables created successfully!');
   } catch (err: any) {

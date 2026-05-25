@@ -48,6 +48,8 @@ export const fetchDashboardStats = () => apiRequest(`${API_BASE}/dashboard/stats
 export const fetchContests = () => apiRequest(`${API_BASE}/contests`);
 export const fetchContestById = (id: number) => apiRequest(`${API_BASE}/contests/${id}`);
 export const fetchContestProblems = (contestId: number) => apiRequest(`${API_BASE}/contests/${contestId}/problems`);
+export const fetchContestProblem = (contestId: number, problemId: number) =>
+  apiRequest(`${API_BASE}/contests/${contestId}/problems/${problemId}`, { headers: getAuthHeaders() });
 
 export const joinContest = (contestId: number) =>
   apiRequest(`${API_BASE}/submissions/participations`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ contest_id: contestId }) });
@@ -105,10 +107,11 @@ export const fetchLeaderboard = (contestId?: number) =>
   apiRequest(contestId ? `${API_BASE}/leaderboard/${contestId}` : `${API_BASE}/leaderboard`);
 
 // ─── Submissions ───
-export function fetchSubmissions(filters?: { user_id?: number; contest_id?: number; page?: number; limit?: number }) {
+export function fetchSubmissions(filters?: { user_id?: number; contest_id?: number; problem_id?: number; page?: number; limit?: number }) {
   const params = new URLSearchParams();
   if (filters?.user_id) params.set('user_id', String(filters.user_id));
   if (filters?.contest_id) params.set('contest_id', String(filters.contest_id));
+  if (filters?.problem_id) params.set('problem_id', String(filters.problem_id));
   if (filters?.page) params.set('page', String(filters.page));
   if (filters?.limit) params.set('limit', String(filters.limit));
   return apiRequest(`${API_BASE}/submissions?${params}`);
@@ -145,15 +148,7 @@ export const markAllNotificationsRead = () =>
 export const fetchUserBadges = (userId: number) =>
   apiRequest(`${API_BASE}/users/${userId}/badges`, { headers: getAuthHeaders() });
 
-export const fetchComments = (problemId: number) =>
-  apiRequest(`${API_BASE}/comments/${problemId}`);
 
-export const postComment = (problemId: number, content: string) =>
-  apiRequest(`${API_BASE}/comments/${problemId}`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ content })
-  });
 
 export const fetchTracks = () =>
   apiRequest(`${API_BASE}/tracks`);

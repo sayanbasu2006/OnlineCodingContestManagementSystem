@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { fetchContestById, fetchContestProblems, joinContest, fetchParticipations, startContest } from "../api/api";
+import { fetchContestById, fetchContestProblems, joinContest, fetchParticipations, startContest, fetchLeaderboard } from "../api/api";
 import { useAuth } from "../App";
 import { useToast } from "../components/Toast";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -63,6 +63,16 @@ export default function ContestDetail() {
   const [joining, setJoining] = useState(false);
   const [starting, setStarting] = useState(false);
   const [showStartConfirm, setShowStartConfirm] = useState(false);
+  const [activeTab, setActiveTab] = useState<"problems" | "leaderboard">("problems");
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === "leaderboard" && contest?.status === "ENDED" && leaderboard.length === 0) {
+      setLoadingLeaderboard(true);
+      fetchLeaderboard(contest.contest_id).then(setLeaderboard).catch(console.error).finally(() => setLoadingLeaderboard(false));
+    }
+  }, [activeTab, contest]);
 
   useEffect(() => {
     if (!id) return;
@@ -192,9 +202,18 @@ export default function ContestDetail() {
         </div>
       </div>
 
+      <div className="workspace-tabs" style={{ padding: '0 2rem', marginTop: '2rem', borderBottom: '1px solid var(--border)' }}>
+        <button className={`workspace-tab ${activeTab === 'problems' ? 'active' : ''}`} onClick={() => setActiveTab('problems')}>🧩 Problems</button>
+        {contest.status === 'ENDED' && (
+          <button className={`workspace-tab ${activeTab === 'leaderboard' ? 'active' : ''}`} onClick={() => setActiveTab('leaderboard')}>🏆 Leaderboard</button>
+        )}
+      </div>
+
       <div className="contest-problems-section">
-        <h2>Problems</h2>
-        <div className="contest-problems-grid">
+        {activeTab === 'problems' && (
+          <>
+            <h2>Problems</h2>
+            <div className="contest-problems-grid">
           {problems.length === 0 ? (
             <p>No problems have been added to this contest yet.</p>
           ) : (
@@ -208,9 +227,11 @@ export default function ContestDetail() {
                 <div className="problem-card-footer">
                   <span className="problem-score">{p.max_score} pts</span>
                   <div className="problem-card-actions">
-                    <button onClick={() => navigate(`/problems/${p.problem_id}`)} className="btn-small btn-outline">
-                      View
-                    </button>
+                    {contest.status === "ENDED" && (
+                      <button onClick={() => navigate(`/problems/${p.problem_id}`)} className="btn-small btn-outline">
+                        View
+                      </button>
+                    )}
                     {participation?.status === "STARTED" && (
                       <button
                         onClick={() => navigate(`/problems/${p.problem_id}?contest=${contest.contest_id}`)}
@@ -225,6 +246,42 @@ export default function ContestDetail() {
             ))
           )}
         </div>
+        </>
+        )}
+
+        {activeTab === 'leaderboard' && (
+          <>
+            <h2>Final Leaderboard</h2>
+            {loadingLeaderboard ? (
+              <div className="skeleton-block" style={{ height: '200px' }} />
+            ) : leaderboard.length === 0 ? (
+              <p>No participation data available for this contest.</p>
+            ) : (
+              <div className="leaderboard-table-container">
+                <table className="leaderboard-table">
+                  <thead>
+                    <tr>
+                      <th>Rank</th>
+                      <th>User</th>
+                      <th>Total Score</th>
+                      <th>Submissions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leaderboard.map((row: any) => (
+                      <tr key={row.user_id}>
+                        <td><div className={`rank-badge rank-${row.rank}`}>{row.rank}</div></td>
+                        <td style={{ fontWeight: 600 }}>{row.username}</td>
+                        <td style={{ color: 'var(--accent-2)', fontWeight: 'bold' }}>{row.total_score}</td>
+                        <td style={{ color: 'var(--muted)' }}>{row.submissions}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       <ConfirmDialog

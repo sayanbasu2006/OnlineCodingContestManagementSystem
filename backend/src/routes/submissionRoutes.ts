@@ -58,20 +58,29 @@ router.post('/', protect, async (req: AuthRequest, res: Response): Promise<void>
         let isPractice = false;
 
         if (!target_contest_id || target_contest_id === 0) {
-            // Practice mode: Find any contest this problem belongs to to satisfy DB schema
-            const cpResult = await pool.query('SELECT contest_id FROM contest_problems WHERE problem_id = $1 LIMIT 1', [problem_id]);
+            // Practice mode may only attach to ended contests. This avoids bypassing
+            // live contest registration/start checks through the generic submit route.
+            const cpResult = await pool.query(
+                `SELECT cp.contest_id
+                 FROM contest_problems cp
+                 JOIN contests c ON c.contest_id = cp.contest_id
+                 WHERE cp.problem_id = $1 AND c.status = 'ENDED'
+                 ORDER BY c.end_time DESC
+                 LIMIT 1`,
+                [problem_id]
+            );
             const cp = cpResult.rows;
             if (cp.length > 0) {
                 target_contest_id = cp[0].contest_id;
                 isPractice = true;
             } else {
-                res.status(400).json({ error: 'This problem cannot be practiced as it belongs to no contest' }); 
+                res.status(400).json({ error: 'Practice submissions are available after a contest ends. Use the contest workspace for live contest submissions.' });
                 return;
             }
         } else {
             // Verify contest exists
             const contestCheckResult = await pool.query(
-                'SELECT status, start_time, end_time FROM contests WHERE contest_id = $1', [target_contest_id]
+                'SELECT status, start_time, end_time, duration_minutes FROM contests WHERE contest_id = $1', [target_contest_id]
             );
             const contestCheck = contestCheckResult.rows;
             if (contestCheck.length === 0) { res.status(404).json({ error: 'Contest not found' }); return; }
@@ -99,6 +108,24 @@ router.post('/', protect, async (req: AuthRequest, res: Response): Promise<void>
             );
             if (participationCheckResult.rows.length === 0) {
                 res.status(403).json({ error: 'User must join the contest before submitting solutions' }); return;
+            }
+
+            const participation = participationCheckResult.rows[0];
+            if (participation.status !== 'STARTED') {
+                res.status(403).json({ error: 'Start the contest timer before submitting solutions' }); return;
+            }
+            if (participation.status === 'FINISHED') {
+                res.status(403).json({ error: 'You have already finished this contest' }); return;
+            }
+            if (participation.start_time) {
+                const examEnd = new Date(participation.start_time).getTime() + contest.duration_minutes * 60000;
+                if (Date.now() > examEnd) {
+                    await pool.query(
+                        'UPDATE participations SET status = $1 WHERE user_id = $2 AND contest_id = $3',
+                        ['FINISHED', user_id, target_contest_id]
+                    );
+                    res.status(403).json({ error: 'Contest timer has expired' }); return;
+                }
             }
         }
 

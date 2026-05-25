@@ -1,11 +1,17 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { fetchProblemById, fetchTestCases, fetchComments, postComment, submitSolution } from "../api/api";
+import { fetchProblemById, fetchTestCases, submitSolution, fetchContestProblem, fetchContestProblems } from "../api/api";
 import { useAuth } from "../App";
 import { useToast } from "../components/Toast";
 import { motion } from "framer-motion";
-import Editor from "@monaco-editor/react";
+
+const fetchComments = async (id: number) => [];
+const postComment = async (id: number, content: string) => {};
+
+import Editor, { loader } from "@monaco-editor/react";
 import confetti from "canvas-confetti";
+
+loader.config({ paths: { vs: 'https://unpkg.com/monaco-editor@0.55.1/min/vs' } });
 
 interface Problem {
   problem_id: number;
@@ -15,6 +21,13 @@ interface Problem {
   max_score: number;
   tags: string[];
   editorial?: string;
+  sequence_order?: number;
+  contest_index?: string;
+}
+
+interface ContestProblem extends Problem {
+  sequence_order: number;
+  contest_index: string;
 }
 
 interface TestCase {
@@ -66,25 +79,40 @@ export default function ProblemDetails() {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<any>(null);
   
-  // AI removed
+  const [contestProblems, setContestProblems] = useState<ContestProblem[]>([]);
+
+  const currentContestIndex = contestProblems.findIndex((p) => p.problem_id === problem?.problem_id);
+  const previousContestProblem = currentContestIndex > 0 ? contestProblems[currentContestIndex - 1] : null;
+  const nextContestProblem = currentContestIndex >= 0 && currentContestIndex < contestProblems.length - 1
+    ? contestProblems[currentContestIndex + 1]
+    : null;
+  const isContestMode = contestId > 0;
+
+  const navigateToProblem = (target: ContestProblem | null) => {
+    if (!target) return;
+    navigate(`/problems/${target.problem_id}?contest=${contestId}`);
+  };
 
   useEffect(() => {
     if (!id) return;
     const pid = parseInt(id);
 
+    const problemRequest = isContestMode ? fetchContestProblem(contestId, pid) : fetchProblemById(pid);
     Promise.all([
-      fetchProblemById(pid), 
+      problemRequest,
+      isContestMode ? fetchContestProblems(contestId) : Promise.resolve([]),
       fetchTestCases(pid).catch(() => []),
       fetchComments(pid).catch(() => [])
     ])
-      .then(([prob, tc, comms]) => { 
+      .then(([prob, contestProblemList, tc, comms]) => { 
         setProblem(prob); 
+        setContestProblems(contestProblemList);
         setTestCases(tc); 
         setComments(comms);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, contestId, isContestMode]);
 
   useEffect(() => {
     if (!code || code === BOILERPLATE.cpp || code === BOILERPLATE.c || code === BOILERPLATE.java || code === BOILERPLATE.python || code === BOILERPLATE.javascript) {
@@ -132,6 +160,8 @@ export default function ProblemDetails() {
       setResult(res);
       showToast(`Solution submitted! Score: ${res.score}`, "success");
       
+      window.dispatchEvent(new Event('submission-success'));
+
       if (res.score > 0) {
         confetti({
           particleCount: 150,
@@ -154,7 +184,7 @@ export default function ProblemDetails() {
   if (!problem) return <div className="empty-state">Problem not found</div>;
 
   return (
-    <div className="workspace-layout">
+    <div className={`workspace-layout ${isContestMode ? "contest-workspace" : ""}`}>
       {/* LEFT PANE */}
       <div className="workspace-left">
         <div className="workspace-tabs">
@@ -332,8 +362,12 @@ export default function ProblemDetails() {
                 {submitting ? "Submitting..." : "Submit Code"}
               </button>
               {result && result.score > 0 && (
-                <button onClick={() => navigate(`/problems/${problem.problem_id + 1}`)} className="btn-accent btn-sm">
-                  Next Question →
+                <button
+                  onClick={() => isContestMode ? navigateToProblem(nextContestProblem) : navigate(`/problems/${problem.problem_id + 1}`)}
+                  disabled={isContestMode && !nextContestProblem}
+                  className="btn-accent btn-sm"
+                >
+                  {isContestMode ? (nextContestProblem ? "Next Problem" : "Contest Complete") : "Next Question →"}
                 </button>
               )}
             </div>

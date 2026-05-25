@@ -136,23 +136,23 @@ async function seed() {
     console.log('  ✓ 10 problems (3 easy, 4 medium, 3 hard)');
 
     // ── Contest-Problem mappings ──
-    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (1, 1)`);
-    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (1, 4)`);
-    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (1, 5)`);
-    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (1, 8)`);
-    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (2, 2)`);
-    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (2, 3)`);
-    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (2, 6)`);
-    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (2, 7)`);
-    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (2, 9)`);
-    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (3, 5)`);
-    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (3, 7)`);
-    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (3, 8)`);
-    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (3, 9)`);
-    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (3, 10)`);
-    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (4, 1)`);
-    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (4, 2)`);
-    await client.query(`INSERT INTO contest_problems (contest_id, problem_id) VALUES (4, 3)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id, sequence_order) VALUES (1, 1, 1)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id, sequence_order) VALUES (1, 4, 2)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id, sequence_order) VALUES (1, 5, 3)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id, sequence_order) VALUES (1, 8, 4)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id, sequence_order) VALUES (2, 2, 1)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id, sequence_order) VALUES (2, 3, 2)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id, sequence_order) VALUES (2, 6, 3)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id, sequence_order) VALUES (2, 7, 4)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id, sequence_order) VALUES (2, 9, 5)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id, sequence_order) VALUES (3, 5, 1)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id, sequence_order) VALUES (3, 7, 2)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id, sequence_order) VALUES (3, 8, 3)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id, sequence_order) VALUES (3, 9, 4)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id, sequence_order) VALUES (3, 10, 5)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id, sequence_order) VALUES (4, 1, 1)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id, sequence_order) VALUES (4, 2, 2)`);
+    await client.query(`INSERT INTO contest_problems (contest_id, problem_id, sequence_order) VALUES (4, 3, 3)`);
     console.log('  ✓ contest-problem mappings');
 
     // ── Participations ──

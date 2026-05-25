@@ -15,7 +15,7 @@ import Profile from "./pages/Profile";
 import Tracks from "./pages/Tracks";
 import TrackDetails from "./pages/TrackDetails";
 
-import { fetchActiveParticipation, finishContest } from "./api/api";
+import { fetchActiveParticipation } from "./api/api";
 import { ToastProvider, useToast } from "./components/Toast";
 import ConfirmDialog from "./components/ConfirmDialog";
 import NotificationBell from "./components/NotificationBell";
@@ -92,12 +92,49 @@ function Layout({ children }: { children: React.ReactNode }) {
   const timer = useContestTimer(activeContest?.start_time || "", activeContest?.duration_minutes || 0);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [examStats, setExamStats] = useState({ solved: 0, total: 0 });
+
+  const fetchStats = async () => {
+    if (!activeContest || !user) return;
+    try {
+      const api = await import("./api/api");
+      const [problems, submissionsRes] = await Promise.all([
+        api.fetchContestProblems(activeContest.active_contest_id),
+        api.fetchSubmissions({ user_id: user.user_id, contest_id: activeContest.active_contest_id, limit: 300 })
+      ]);
+      const subs = submissionsRes.data || [];
+      let solved = 0;
+      problems.forEach((p: any) => {
+        const maxScore = subs.filter((s: any) => s.problem_id === p.problem_id).reduce((max: number, s: any) => Math.max(max, s.score), 0);
+        if (maxScore >= p.max_score) solved++;
+      });
+      setExamStats({ solved, total: problems.length });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    fetchStats();
+    const handleSubmission = () => fetchStats();
+    window.addEventListener('submission-success', handleSubmission);
+    return () => window.removeEventListener('submission-success', handleSubmission);
+  }, [activeContest, user]);
 
   const handleLogout = () => { logout(); navigate("/login"); };
 
   const handleFinishExam = async () => {
     if (!activeContest) return;
-    try { await finishContest(activeContest.active_contest_id); await refreshActiveContest(); showToast("Exam finished!", "success"); navigate(`/contests/${activeContest.active_contest_id}`); }
+    try { 
+      const api = await import("./api/api");
+      await api.finishContest(activeContest.active_contest_id); 
+      await refreshActiveContest(); 
+      showToast("Exam finished!", "success"); 
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+      navigate(`/contests/${activeContest.active_contest_id}`); 
+    }
     catch { showToast("Failed to finish exam", "error"); }
     setShowFinishConfirm(false);
   };
@@ -105,9 +142,20 @@ function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (timer.expired && activeContest) {
       showToast("⏰ Time is up! Exam auto-finished.", "warning", 6000);
-      finishContest(activeContest.active_contest_id).then(() => refreshActiveContest()).then(() => navigate(`/contests/${activeContest.active_contest_id}`));
+      import("./api/api").then(m => m.finishContest(activeContest.active_contest_id)).then(() => refreshActiveContest()).then(() => {
+        if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+        navigate(`/contests/${activeContest.active_contest_id}`);
+      });
     }
   }, [timer.expired]);
+
+  useEffect(() => {
+    if (activeContest) {
+      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    }
+  }, [activeContest]);
 
   useEffect(() => { setMobileMenuOpen(false); }, [location.pathname]);
 
@@ -115,40 +163,34 @@ function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="layout">
-      {!isLocked && (
-        <aside className={`sidebar ${mobileMenuOpen ? "sidebar-open" : ""}`}>
-          <div className="brand"><img src="/logo.png" alt="CodeArena" className="brand-mark" /><div className="brand-text"><span className="brand-title">CodeArena</span><span className="brand-subtitle">Coding Contest</span></div></div>
-          <nav className="sidebar-nav">
-            <NavLink to="/" end className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">📊</span> Dashboard</NavLink>
-            <NavLink to="/contests" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">🏆</span> Contests</NavLink>
-            <NavLink to="/problems" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">📝</span> Problems</NavLink>
-            <NavLink to="/tracks" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">🗺️</span> Tracks</NavLink>
-            <NavLink to="/leaderboard" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">🏅</span> Leaderboard</NavLink>
-            {isAuthenticated && (<>
-              <NavLink to="/submit" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">🚀</span> Submit</NavLink>
-              <NavLink to="/submissions" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">📋</span> My Submissions</NavLink>
-              <NavLink to="/profile" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">👤</span> Profile</NavLink>
-            </>)}
-            {isAuthenticated && user?.role === "ADMIN" && (
-              <NavLink to="/admin" className={({ isActive }) => isActive ? "active" : ""}><span className="nav-icon">⚙️</span> Admin Panel</NavLink>
-            )}
-          </nav>
-          <div className="sidebar-footer"><div className="status-dot" /><span>System Healthy</span></div>
-        </aside>
-      )}
-
-      <div className="main">
-        {isLocked ? (
-          <header className="navbar locked-navbar">
-            <div className="locked-warning"><span className="locked-icon">⚠️</span><span>Exam in Progress</span></div>
-            <div className="timer-display"><span className="timer-label">Time Remaining</span><span className="timer-value">{timer.text}</span></div>
-            <button onClick={() => setShowFinishConfirm(true)} className="btn-finish-exam">Finish Exam</button>
-          </header>
-        ) : (
-          <header className="navbar">
-            <div className="navbar-left">
-              <button className="mobile-menu-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu">{mobileMenuOpen ? "✕" : "☰"}</button>
-              <h2>CodeArena</h2>
+      {isLocked ? (
+        <header className="navbar locked-navbar">
+          <div className="locked-warning"><span className="locked-icon">⚠️</span><span>Exam in Progress</span></div>
+          <div className="exam-stats" style={{ display: 'flex', gap: '20px', color: '#fff', fontWeight: 500 }}>
+            <span className="exam-stat-item">✅ Solved: {examStats.solved}/{examStats.total}</span>
+            <span className="exam-stat-item">📝 Left: {examStats.total - examStats.solved}</span>
+          </div>
+          <div className="timer-display"><span className="timer-label">Time Remaining</span><span className="timer-value">{timer.text}</span></div>
+          <button onClick={() => setShowFinishConfirm(true)} className="btn-finish-exam">Finish Exam</button>
+        </header>
+      ) : (
+        <header className="top-navbar">
+          <div className="top-navbar-container">
+            <div className="top-navbar-left">
+              <div className="brand">
+                <div className="brand-mark" />
+                <span className="brand-title">CodeArena</span>
+              </div>
+              <nav className="top-nav-links">
+                <NavLink to="/" end className={({ isActive }) => isActive ? "active" : ""}>Dashboard</NavLink>
+                <NavLink to="/contests" className={({ isActive }) => isActive ? "active" : ""}>Contests</NavLink>
+                <NavLink to="/problems" className={({ isActive }) => isActive ? "active" : ""}>Problems</NavLink>
+                <NavLink to="/tracks" className={({ isActive }) => isActive ? "active" : ""}>Tracks</NavLink>
+                <NavLink to="/leaderboard" className={({ isActive }) => isActive ? "active" : ""}>Leaderboard</NavLink>
+                {isAuthenticated && user?.role === "ADMIN" && (
+                  <NavLink to="/admin" className={({ isActive }) => isActive ? "active" : ""}>Admin</NavLink>
+                )}
+              </nav>
             </div>
             <div className="top-navbar-right">
 

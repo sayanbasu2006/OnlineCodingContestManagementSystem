@@ -1,9 +1,14 @@
 import express from 'express';
 import { Request, Response } from 'express';
-import { protect, admin } from '../middleware/authMiddleware';
+import { protect, admin, AuthRequest } from '../middleware/authMiddleware';
 const { pool } = require('../config/db');
 
 const router = express.Router();
+
+function parseId(value: unknown): number | null {
+    const parsed = Number(value);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
 
 // Get active contest participation for logged in user
 // NOTE: This route MUST be before /:id to avoid Express matching "me" as an :id parameter
@@ -131,11 +136,22 @@ router.delete('/:id', protect, admin, async (req: Request, res: Response): Promi
 // Get problems in a contest
 router.get('/:id/problems', async (req: Request, res: Response): Promise<void> => {
     try {
+        const contestId = parseId(req.params.id);
+        if (!contestId) { res.status(400).json({ error: 'Invalid contest id' }); return; }
+
         const result = await pool.query(
-            `SELECT p.* FROM problems p
+            `SELECT
+                p.problem_id,
+                p.title,
+                p.difficulty,
+                p.max_score,
+                cp.sequence_order,
+                CHR(64 + cp.sequence_order) AS contest_index
+             FROM problems p
              JOIN contest_problems cp ON p.problem_id = cp.problem_id
-             WHERE cp.contest_id = $1 ORDER BY p.problem_id`,
-            [req.params.id]
+             WHERE cp.contest_id = $1
+             ORDER BY cp.sequence_order, p.problem_id`,
+            [contestId]
         );
         res.json(result.rows);
     } catch (err: any) {
@@ -143,24 +159,142 @@ router.get('/:id/problems', async (req: Request, res: Response): Promise<void> =
     }
 });
 
+// Get a contest-scoped problem. This prevents solving or navigating to a
+// globally adjacent problem that is not linked to the active contest.
+router.get('/:id/problems/:problemId', protect, async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const contestId = parseId(req.params.id);
+        const problemId = parseId(req.params.problemId);
+        const userId = req.user?.user_id;
+
+        if (!contestId || !problemId) {
+            res.status(400).json({ error: 'Invalid contest or problem id' });
+            return;
+        }
+
+        const contestResult = await pool.query(
+            `SELECT contest_id, title, status, start_time, end_time, duration_minutes
+             FROM contests
+             WHERE contest_id = $1`,
+            [contestId]
+        );
+        if (contestResult.rows.length === 0) {
+            res.status(404).json({ error: 'Contest not found' });
+            return;
+        }
+
+        const contest = contestResult.rows[0];
+        const isAdmin = req.user?.role === 'ADMIN';
+
+        const participationResult = await pool.query(
+            `SELECT participation_id, status, start_time
+             FROM participations
+             WHERE user_id = $1 AND contest_id = $2`,
+            [userId, contestId]
+        );
+        const participation = participationResult.rows[0];
+
+        if (!isAdmin) {
+            if (!participation) {
+                res.status(403).json({ error: 'You must join this contest before opening its problems' });
+                return;
+            }
+            if (contest.status === 'UPCOMING') {
+                res.status(403).json({ error: 'Contest problems unlock when the contest starts' });
+                return;
+            }
+            if (contest.status === 'ONGOING' && participation.status !== 'STARTED') {
+                res.status(403).json({ error: 'Start the contest timer before opening problems' });
+                return;
+            }
+            if (participation.status === 'FINISHED' && contest.status !== 'ENDED') {
+                res.status(403).json({ error: 'You have already finished this contest' });
+                return;
+            }
+        }
+
+        const problemResult = await pool.query(
+            `SELECT
+                p.*,
+                STRING_AGG(pt.tag, ',') AS tags,
+                cp.sequence_order,
+                CHR(64 + cp.sequence_order) AS contest_index
+             FROM contest_problems cp
+             JOIN problems p ON p.problem_id = cp.problem_id
+             LEFT JOIN problem_tags pt ON p.problem_id = pt.problem_id
+             WHERE cp.contest_id = $1 AND cp.problem_id = $2
+             GROUP BY p.problem_id, cp.sequence_order`,
+            [contestId, problemId]
+        );
+
+        if (problemResult.rows.length === 0) {
+            res.status(404).json({ error: 'Problem is not part of this contest' });
+            return;
+        }
+
+        const problem = problemResult.rows[0];
+        res.json({
+            ...problem,
+            tags: problem.tags ? problem.tags.split(',') : [],
+            contest: {
+                contest_id: contest.contest_id,
+                title: contest.title,
+                status: contest.status,
+                start_time: contest.start_time,
+                end_time: contest.end_time,
+                duration_minutes: contest.duration_minutes,
+                participation_status: participation?.status || null,
+                participation_start_time: participation?.start_time || null
+            }
+        });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Add problem to contest (admin only)
 router.post('/:id/problems', protect, admin, async (req: Request, res: Response): Promise<void> => {
+    const client = await pool.connect();
     try {
         const contestId = req.params.id;
-        const { problem_id } = req.body;
+        const { problem_id, sequence_order } = req.body;
         if (!problem_id) { res.status(400).json({ error: 'problem_id is required' }); return; }
 
-        const contestCheck = await pool.query('SELECT contest_id FROM contests WHERE contest_id = $1', [contestId]);
-        if (contestCheck.rows.length === 0) { res.status(404).json({ error: 'Contest not found' }); return; }
+        await client.query('BEGIN');
 
-        const problemCheck = await pool.query('SELECT problem_id FROM problems WHERE problem_id = $1', [problem_id]);
-        if (problemCheck.rows.length === 0) { res.status(404).json({ error: 'Problem not found' }); return; }
+        const contestCheck = await client.query('SELECT contest_id FROM contests WHERE contest_id = $1', [contestId]);
+        if (contestCheck.rows.length === 0) {
+            await client.query('ROLLBACK');
+            res.status(404).json({ error: 'Contest not found' });
+            return;
+        }
 
-        await pool.query('INSERT INTO contest_problems (contest_id, problem_id) VALUES ($1, $2)', [contestId, problem_id]);
-        res.status(201).json({ message: 'Problem added to contest successfully' });
+        const problemCheck = await client.query('SELECT problem_id FROM problems WHERE problem_id = $1', [problem_id]);
+        if (problemCheck.rows.length === 0) {
+            await client.query('ROLLBACK');
+            res.status(404).json({ error: 'Problem not found' });
+            return;
+        }
+
+        const nextOrderResult = await client.query(
+            'SELECT COALESCE(MAX(sequence_order), 0) + 1 AS next_order FROM contest_problems WHERE contest_id = $1',
+            [contestId]
+        );
+        const nextOrder = sequence_order || nextOrderResult.rows[0].next_order;
+
+        await client.query(
+            `INSERT INTO contest_problems (contest_id, problem_id, sequence_order)
+             VALUES ($1, $2, $3)`,
+            [contestId, problem_id, nextOrder]
+        );
+        await client.query('COMMIT');
+        res.status(201).json({ message: 'Problem added to contest successfully', sequence_order: nextOrder });
     } catch (err: any) {
+        await client.query('ROLLBACK');
         if (err.code === '23505' || err.code === 'ER_DUP_ENTRY') { res.status(409).json({ error: 'Problem already assigned to this contest' }); return; }
         res.status(500).json({ error: err.message });
+    } finally {
+        client.release();
     }
 });
 

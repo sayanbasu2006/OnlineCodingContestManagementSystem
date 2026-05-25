@@ -13,7 +13,7 @@ import leaderboardRoutes from './routes/leaderboardRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import exportRoutes from './routes/exportRoutes';
-import commentRoutes from './routes/commentRoutes';
+
 import trackRoutes from './routes/trackRoutes';
 import aiRoutes from './routes/aiRoutes';
 
@@ -79,15 +79,11 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/export', exportRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/comments', commentRoutes);
+
 app.use('/api/tracks', trackRoutes);
 app.use('/api/ai', aiRoutes);
 
-// Export app for Vercel serverless function
-export default app;
-
-// Only start listening when running locally (not in Vercel)
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+if (!process.env.VERCEL) {
     async function start() {
         try {
             await initializeDatabase();
@@ -103,9 +99,5 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
     start();
 }
 
-// Only start listening locally; Vercel handles invocation through default export
-if (!process.env.VERCEL) {
-    start();
-}
 
 export default app;

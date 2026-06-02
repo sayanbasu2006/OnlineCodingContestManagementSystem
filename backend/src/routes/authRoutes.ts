@@ -7,6 +7,9 @@ const { pool } = require('../config/db');
 
 const router = express.Router();
 
+// In-memory store for verification codes (expires in 10 minutes)
+const resetTokens = new Map<string, { email: string; token: string; expires: number }>();
+
 const JWT_SECRET: string = process.env.JWT_SECRET as string;
 if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is not set');
 
@@ -17,7 +20,7 @@ function generateToken(userId: number, role: string) {
 // Register
 router.post('/register', async (req: Request, res: Response): Promise<void> => {
     try {
-        const { username, email, password, role } = req.body;
+        const { username, email, password } = req.body;
 
         if (!username || !email || !password) {
             res.status(400).json({ error: 'username, email, and password are required' });
@@ -29,20 +32,20 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
 
         const result = await pool.query(
             'INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4) RETURNING user_id',
-            [username, email, hashed, role || 'USER']
+            [username, email, hashed, 'USER']
         );
         const newUserId = result.rows[0].user_id;
 
-        const token = generateToken(newUserId, role || 'USER');
+        const token = generateToken(newUserId, 'USER');
 
         res.status(201).json({
             user_id: newUserId,
             username, email,
-            role: role || 'USER',
+            role: 'USER',
             token
         });
     } catch (err: any) {
-        if (err.code === 'ER_DUP_ENTRY') {
+        if (err.code === '23505') {
             res.status(409).json({ error: 'Username or email already exists' });
             return;
         }
@@ -142,7 +145,7 @@ router.put('/me', protect, async (req: AuthRequest, res: Response): Promise<void
         if (result.rowCount === 0) { res.status(404).json({ error: 'User not found' }); return; }
         res.json({ message: 'Profile updated successfully' });
     } catch (err: any) {
-        if (err.code === 'ER_DUP_ENTRY') {
+        if (err.code === '23505') {
             res.status(409).json({ error: 'Username or email already exists' });
             return;
         }
@@ -176,6 +179,77 @@ router.put('/me/password', protect, async (req: AuthRequest, res: Response): Pro
         await pool.query('UPDATE users SET password = $1 WHERE user_id = $2', [hashedPassword, req.user?.user_id]);
 
         res.json({ message: 'Password changed successfully' });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Request password reset (Forgot Password)
+router.post('/forgot-password', async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            res.status(400).json({ error: 'Email is required' });
+            return;
+        }
+
+        // Verify user exists in the database
+        const result = await pool.query('SELECT user_id FROM users WHERE email = $1', [email]);
+        if (result.rows.length === 0) {
+            res.status(404).json({ error: 'No account with that email exists' });
+            return;
+        }
+
+        // Generate a 6-digit numeric OTP code
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Store OTP in the in-memory map expiring in 10 minutes
+        resetTokens.set(email, {
+            email,
+            token: otp,
+            expires: Date.now() + 10 * 60 * 1000 // 10 minutes
+        });
+
+        // Return the OTP in the response for demo/testing purposes only in non-production
+        res.json({
+            message: 'Verification code generated successfully',
+            token: process.env.NODE_ENV === 'production' ? undefined : otp
+        });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Reset password with token
+router.post('/reset-password', async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { email, token, newPassword } = req.body;
+        if (!email || !token || !newPassword) {
+            res.status(400).json({ error: 'email, token, and newPassword are required' });
+            return;
+        }
+        if (newPassword.length < 6) {
+            res.status(400).json({ error: 'New password must be at least 6 characters' });
+            return;
+        }
+
+        const storedData = resetTokens.get(email);
+        if (!storedData || storedData.token !== token || storedData.expires < Date.now()) {
+            res.status(400).json({ error: 'Invalid or expired verification code' });
+            return;
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // Update database
+        await pool.query('UPDATE users SET password = $1 WHERE email = $2', [hashedPassword, email]);
+
+        // Clean up token
+        resetTokens.delete(email);
+
+        res.json({ message: 'Password reset successfully' });
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }

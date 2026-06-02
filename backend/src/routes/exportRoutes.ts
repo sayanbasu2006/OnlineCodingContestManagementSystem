@@ -40,7 +40,13 @@ router.get('/leaderboard/:contest_id', protect, admin, async (req: Request, res:
 
         // Generate CSV
         const headers = Object.keys(rows[0]).join(',');
-        const csvRows = rows.map((row: any) => Object.values(row).join(','));
+        const csvRows = rows.map((row: any) => {
+            return Object.values(row).map((val: any) => {
+                if (val instanceof Date) return `"${val.toISOString()}"`;
+                if (typeof val === 'string') return `"${val.replace(/"/g, '""')}"`;
+                return val === null || val === undefined ? '' : val;
+            }).join(',');
+        });
         const csvData = [headers, ...csvRows].join('\n');
 
         res.setHeader('Content-Type', 'text/csv');

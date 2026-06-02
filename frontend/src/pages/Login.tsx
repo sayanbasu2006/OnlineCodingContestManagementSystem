@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
-import { loginUser, fetchDashboardStats } from "../api/api";
+import { loginUser } from "../api/api";
 import { useAuth } from "../App";
 import { useToast } from "../components/Toast";
 
@@ -8,7 +8,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [stats, setStats] = useState({ totalContests: 0, totalUsers: 0, totalProblems: 0 });
+  const [rememberMe, setRememberMe] = useState(true);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { login } = useAuth();
@@ -20,19 +20,7 @@ export default function Login() {
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    fetchDashboardStats()
-      .then((res) => {
-        if (res) {
-          setStats({
-            totalContests: res.totalContests || 0,
-            totalUsers: res.totalUsers || 0,
-            totalProblems: res.totalProblems || 0,
-          });
-        }
-      })
-      .catch(() => {});
-  }, []);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +35,8 @@ export default function Login() {
           email: data.email,
           role: data.role,
         },
-        data.token
+        data.token,
+        rememberMe
       );
       showToast(`Welcome back, ${data.username}!`, "success");
       navigate("/");
@@ -99,23 +88,7 @@ int main() {
             </p>
           </div>
 
-          <div className="marketing-stats-grid">
-            <div className="stat-item-box">
-              <span className="stat-emoji">🏆</span>
-              <h3>{stats.totalContests}+</h3>
-              <p>Contests Every Month</p>
-            </div>
-            <div className="stat-item-box">
-              <span className="stat-emoji">👥</span>
-              <h3>{stats.totalUsers}+</h3>
-              <p>Coders Competing</p>
-            </div>
-            <div className="stat-item-box">
-              <span className="stat-emoji">⚡</span>
-              <h3>{stats.totalProblems}+</h3>
-              <p>Problems Available</p>
-            </div>
-          </div>
+
 
         </div>
 
@@ -169,7 +142,12 @@ int main() {
 
               <div className="form-action-row">
                 <label className="checkbox-label">
-                  <input type="checkbox" className="remember-me-check" />
+                  <input
+                    type="checkbox"
+                    className="remember-me-check"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
                   <span>Remember me</span>
                 </label>
                 <Link to="/forgot-password" style={{ color: "#3b82f6", textDecoration: "none", fontSize: "14px", fontWeight: 500 }}>
@@ -190,9 +168,7 @@ int main() {
       </div>
 
       <div className="auth-page-footer">
-        <div className="footer-left">Secure. Fast. Reliable.</div>
         <div className="footer-center">© {new Date().getFullYear()} CodeArena. All rights reserved.</div>
-        <div className="footer-right">Built for coders, by coders. 💙</div>
       </div>
     </div>
   );

@@ -1,68 +1,34 @@
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate, useLocation } from "react-router-dom";
-import { useState, createContext, useContext, useEffect } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
-import Contests from "./pages/Contests";
-import ContestDetail from "./pages/ContestDetail";
-import Problems from "./pages/Problems";
-import ProblemDetails from "./pages/ProblemDetails";
-import Leaderboard from "./pages/Leaderboard";
-import MySubmissions from "./pages/MySubmissions";
-import AdminPanel from "./pages/AdminPanel";
-import Profile from "./pages/Profile";
-import Tracks from "./pages/Tracks";
-import TrackDetails from "./pages/TrackDetails";
+import { useTheme, ThemeProvider } from "./contexts/ThemeContext";
+import { useAuth, AuthProvider } from "./contexts/AuthContext";
+export { useTheme, ThemeProvider, useAuth, AuthProvider };
 
-import { fetchActiveParticipation } from "./api/api";
+// Lazy loading route components
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Contests = lazy(() => import("./pages/Contests"));
+const ContestDetail = lazy(() => import("./pages/ContestDetail"));
+const Problems = lazy(() => import("./pages/Problems"));
+const ProblemDetails = lazy(() => import("./pages/ProblemDetails"));
+const Submit = lazy(() => import("./pages/Submit"));
+const Leaderboard = lazy(() => import("./pages/Leaderboard"));
+const MySubmissions = lazy(() => import("./pages/MySubmissions"));
+const AdminPanel = lazy(() => import("./pages/AdminPanel"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Tracks = lazy(() => import("./pages/Tracks"));
+const TrackDetails = lazy(() => import("./pages/TrackDetails"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+import ErrorBoundary from "./components/ErrorBoundary";
+
 import { ToastProvider, useToast } from "./components/Toast";
 import ConfirmDialog from "./components/ConfirmDialog";
 import NotificationBell from "./components/NotificationBell";
 import "./index.css";
-
-// ─── Theme Context ───
-interface ThemeContextType { theme: string; toggleTheme: () => void; }
-const ThemeContext = createContext<ThemeContextType>({ theme: "dark", toggleTheme: () => {} });
-export const useTheme = () => useContext(ThemeContext);
-
-function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
-
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("theme", theme);
-  }, [theme]);
-
-  const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
-
-  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
-}
-
-// ─── Auth Context ───
-interface User { user_id: number; username: string; email: string; role: string; }
-interface ActiveContest { active_contest_id: number; start_time: string; duration_minutes: number; }
-interface AuthContextType { user: User | null; activeContest: ActiveContest | null; login: (user: User, token: string) => void; logout: () => void; refreshActiveContest: () => Promise<void>; isAuthenticated: boolean; }
-
-const AuthContext = createContext<AuthContextType | null>(null);
-export const useAuth = () => { const c = useContext(AuthContext); if (!c) throw new Error("useAuth must be used within AuthProvider"); return c; };
-
-function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => { const s = localStorage.getItem("user"); return s ? JSON.parse(s) : null; });
-  const [activeContest, setActiveContest] = useState<ActiveContest | null>(null);
-
-  const refreshActiveContest = async () => {
-    if (!user) { setActiveContest(null); return; }
-    try { const res = await fetchActiveParticipation(); setActiveContest(res.active_contest_id ? res : null); } catch { setActiveContest(null); }
-  };
-
-  useEffect(() => { refreshActiveContest(); }, [user]);
-
-  const login = (u: User, token: string) => { localStorage.setItem("token", token); localStorage.setItem("user", JSON.stringify(u)); setUser(u); };
-  const logout = () => { localStorage.removeItem("token"); localStorage.removeItem("user"); setUser(null); setActiveContest(null); };
-
-  return <AuthContext.Provider value={{ user, activeContest, login, logout, refreshActiveContest, isAuthenticated: !!user }}>{children}</AuthContext.Provider>;
-}
 
 // ─── Timer Hook ───
 function useContestTimer(startTime: string, durationMinutes: number) {
@@ -94,7 +60,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [examStats, setExamStats] = useState({ solved: 0, total: 0 });
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     if (!activeContest || !user) return;
     try {
       const api = await import("./api/api");
@@ -106,20 +72,20 @@ function Layout({ children }: { children: React.ReactNode }) {
       let solved = 0;
       problems.forEach((p: any) => {
         const maxScore = subs.filter((s: any) => s.problem_id === p.problem_id).reduce((max: number, s: any) => Math.max(max, s.score), 0);
-        if (maxScore >= p.max_score) solved++;
+        if (maxScore > 0) solved++;
       });
       setExamStats({ solved, total: problems.length });
     } catch (e) {
       console.error(e);
     }
-  };
+  }, [activeContest, user]);
 
   useEffect(() => {
     fetchStats();
     const handleSubmission = () => fetchStats();
     window.addEventListener('submission-success', handleSubmission);
     return () => window.removeEventListener('submission-success', handleSubmission);
-  }, [activeContest, user]);
+  }, [fetchStats]);
 
   const handleLogout = () => { logout(); navigate("/login"); };
 
@@ -165,12 +131,20 @@ function Layout({ children }: { children: React.ReactNode }) {
     <div className="layout">
       {isLocked ? (
         <header className="navbar locked-navbar">
-          <div className="locked-warning"><span className="locked-icon">⚠️</span><span>Exam in Progress</span></div>
-          <div className="exam-stats" style={{ display: 'flex', gap: '20px', color: '#fff', fontWeight: 500 }}>
-            <span className="exam-stat-item">✅ Solved: {examStats.solved}/{examStats.total}</span>
-            <span className="exam-stat-item">📝 Left: {examStats.total - examStats.solved}</span>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div className="locked-warning">
+              <span className="secure-badge-dot" />
+              <span>EXAM IN PROGRESS</span>
+            </div>
+            <div className="exam-stats">
+              <span className="exam-stat-item">Solved: {examStats.solved} / {examStats.total}</span>
+              <span className="exam-stat-item">Remaining: {examStats.total - examStats.solved}</span>
+            </div>
           </div>
-          <div className="timer-display"><span className="timer-label">Time Remaining</span><span className="timer-value">{timer.text}</span></div>
+          <div className="timer-display">
+            <span className="timer-label">Time Remaining</span>
+            <span className="timer-value">{timer.text}</span>
+          </div>
           <button onClick={() => setShowFinishConfirm(true)} className="btn-finish-exam">Finish Exam</button>
         </header>
       ) : (
@@ -178,7 +152,6 @@ function Layout({ children }: { children: React.ReactNode }) {
           <div className="top-navbar-container">
             <div className="top-navbar-left">
               <div className="brand">
-                <div className="brand-mark" />
                 <span className="brand-title">CodeArena</span>
               </div>
               <nav className="top-nav-links">
@@ -194,9 +167,38 @@ function Layout({ children }: { children: React.ReactNode }) {
             </div>
             <div className="top-navbar-right">
 
-              <button className="theme-toggle-btn" onClick={toggleTheme} aria-label="Toggle theme" title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
-                {theme === "dark" ? "☀️" : "🌙"}
-              </button>
+              <button 
+                 className={`premium-theme-toggle ${theme}`} 
+                 onClick={toggleTheme} 
+                 aria-label="Toggle theme" 
+                 title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+               >
+                 <div className="toggle-track">
+                   <div className="toggle-icon-sun">
+                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                       <circle cx="12" cy="12" r="5" />
+                       <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                     </svg>
+                   </div>
+                   <div className="toggle-icon-moon">
+                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                     </svg>
+                   </div>
+                   <div className="toggle-thumb">
+                     {theme === 'light' ? (
+                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="thumb-sun-icon">
+                         <circle cx="12" cy="12" r="5" />
+                         <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                       </svg>
+                     ) : (
+                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="thumb-moon-icon">
+                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                       </svg>
+                     )}
+                   </div>
+                 </div>
+               </button>
               {isAuthenticated && <NotificationBell />}
               {isAuthenticated ? (
                 <div className="user-menu-group">
@@ -240,6 +242,16 @@ function Layout({ children }: { children: React.ReactNode }) {
             {isAuthenticated && user?.role === "ADMIN" && (
               <NavLink to="/admin" onClick={() => setMobileMenuOpen(false)}>Admin Panel</NavLink>
             )}
+
+            {/* Mobile-only login/signup or logout links */}
+            {!isAuthenticated ? (
+              <>
+                <NavLink to="/login" onClick={() => setMobileMenuOpen(false)} className="mobile-login-link">Login</NavLink>
+                <NavLink to="/register" onClick={() => setMobileMenuOpen(false)} className="mobile-signup-link">Sign Up</NavLink>
+              </>
+            ) : (
+              <button onClick={() => { handleLogout(); setMobileMenuOpen(false); }} className="mobile-logout-link">Logout</button>
+            )}
           </nav>
         </div>
       )}
@@ -253,6 +265,17 @@ function Layout({ children }: { children: React.ReactNode }) {
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, activeContest } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (activeContest) {
+    const p = window.location.pathname;
+    if (!p.startsWith('/contests') && !p.startsWith('/problems') && !p.startsWith('/submit')) return <Navigate to={`/contests/${activeContest.active_contest_id}`} replace />;
+  }
+  return <>{children}</>;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, user, activeContest } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user?.role !== "ADMIN") return <Navigate to="/" replace />;
   if (activeContest) {
     const p = window.location.pathname;
     if (!p.startsWith('/contests') && !p.startsWith('/problems') && !p.startsWith('/submit')) return <Navigate to={`/contests/${activeContest.active_contest_id}`} replace />;
@@ -283,6 +306,7 @@ function AnimatedRoutes() {
       <Routes location={location} key={location.pathname}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/" element={<Layout><PageTransition><Dashboard /></PageTransition></Layout>} />
         <Route path="/contests" element={<Layout><PageTransition><Contests /></PageTransition></Layout>} />
         <Route path="/contests/:id" element={<Layout><PageTransition><ContestDetail /></PageTransition></Layout>} />
@@ -292,24 +316,36 @@ function AnimatedRoutes() {
         <Route path="/tracks/:id" element={<Layout><PageTransition><TrackDetails /></PageTransition></Layout>} />
         <Route path="/leaderboard" element={<Layout><PageTransition><Leaderboard /></PageTransition></Layout>} />
 
+        <Route path="/submit" element={<ProtectedRoute><Layout><PageTransition><Submit /></PageTransition></Layout></ProtectedRoute>} />
         <Route path="/submissions" element={<ProtectedRoute><Layout><PageTransition><MySubmissions /></PageTransition></Layout></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Layout><PageTransition><Profile /></PageTransition></Layout></ProtectedRoute>} />
-        <Route path="/admin" element={<ProtectedRoute><Layout><PageTransition><AdminPanel /></PageTransition></Layout></ProtectedRoute>} />
+        <Route path="/admin" element={<AdminRoute><Layout><PageTransition><AdminPanel /></PageTransition></Layout></AdminRoute>} />
+        <Route path="*" element={<Layout><PageTransition><NotFound /></PageTransition></Layout>} />
       </Routes>
     </AnimatePresence>
   );
 }
 
+const PageLoader = () => (
+  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 'calc(100vh - 200px)' }}>
+    <div className="spinner" style={{ width: '40px', height: '40px', borderTopColor: 'var(--accent-2)' }} />
+  </div>
+);
+
 export default function App() {
   return (
     <BrowserRouter>
-      <ThemeProvider>
-        <ToastProvider>
-          <AuthProvider>
-            <AnimatedRoutes />
-          </AuthProvider>
-        </ToastProvider>
-      </ThemeProvider>
+      <ErrorBoundary>
+        <ThemeProvider>
+          <ToastProvider>
+            <AuthProvider>
+              <Suspense fallback={<PageLoader />}>
+                <AnimatedRoutes />
+              </Suspense>
+            </AuthProvider>
+          </ToastProvider>
+        </ThemeProvider>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }

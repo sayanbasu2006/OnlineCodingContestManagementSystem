@@ -25,19 +25,6 @@ router.get('/', protect, async (req: any, res: Response): Promise<void> => {
     }
 });
 
-// Mark single notification as read
-router.put('/:id/read', protect, async (req: any, res: Response): Promise<void> => {
-    try {
-        await pool.query(
-            'UPDATE notifications SET is_read = TRUE WHERE notification_id = $1 AND user_id = $2',
-            [req.params.id, req.user?.user_id]
-        );
-        res.json({ message: 'Marked as read' });
-    } catch (err: any) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
 // Mark all as read
 router.put('/read-all', protect, async (req: any, res: Response): Promise<void> => {
     try {
@@ -46,6 +33,19 @@ router.put('/read-all', protect, async (req: any, res: Response): Promise<void> 
             [req.user?.user_id]
         );
         res.json({ message: 'All marked as read' });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Mark single notification as read
+router.put('/:id/read', protect, async (req: any, res: Response): Promise<void> => {
+    try {
+        await pool.query(
+            'UPDATE notifications SET is_read = TRUE WHERE notification_id = $1 AND user_id = $2',
+            [req.params.id, req.user?.user_id]
+        );
+        res.json({ message: 'Marked as read' });
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }

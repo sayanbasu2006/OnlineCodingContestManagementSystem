@@ -19,7 +19,7 @@ export default function NotificationBell() {
     try {
       const data = await fetchNotifications();
       setNotifications(data.notifications || []);
-      setUnreadCount(data.unread_count || 0);
+      setUnreadCount(Number(data.unread_count || 0));
     } catch {}
   };
 

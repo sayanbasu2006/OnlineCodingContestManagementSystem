@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { fetchProblemById, fetchTestCases, submitSolution, fetchContestProblem, fetchContestProblems } from "../api/api";
+import { useParams, useNavigate, useSearchParams, Navigate } from "react-router-dom";
+import { fetchProblemById, fetchTestCases, submitSolution, fetchContestProblem, fetchContestProblems, fetchSubmissions } from "../api/api";
 import { useAuth } from "../App";
 import { useToast } from "../components/Toast";
 import { motion } from "framer-motion";
+import { LANGUAGE_MAP, BOILERPLATE } from "../constants/editor";
 
-const fetchComments = async (id: number) => [];
-const postComment = async (id: number, content: string) => {};
+const fetchComments = async (_id: number) => [];
+const postComment = async (_id: number, _content: string) => {};
 
 import Editor, { loader } from "@monaco-editor/react";
 import confetti from "canvas-confetti";
@@ -37,27 +38,13 @@ interface TestCase {
   is_sample: boolean;
 }
 
-const LANGUAGE_MAP: Record<string, string> = {
-  cpp: "cpp",
-  c: "c",
-  java: "java",
-  python: "python",
-  javascript: "javascript",
-};
 
-const BOILERPLATE: Record<string, string> = {
-  cpp: `#include <iostream>\nusing namespace std;\n\nint main() {\n    // Your solution here\n    \n    return 0;\n}`,
-  c: `#include <stdio.h>\n\nint main() {\n    // Your solution here\n    \n    return 0;\n}`,
-  java: `import java.util.*;\n\npublic class Solution {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // Your solution here\n        \n    }\n}`,
-  python: `# Your solution here\n\ndef solve():\n    pass\n\nsolve()`,
-  javascript: `// Your solution here\nconst readline = require('readline');\nconst rl = readline.createInterface({ input: process.stdin });\n\nrl.on('line', (line) => {\n    // Process input\n});`,
-};
 
 export default function ProblemDetails() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, activeContest, user } = useAuth();
   const { showToast } = useToast();
 
   const contestId = parseInt(searchParams.get("contest") || "0");
@@ -82,7 +69,9 @@ export default function ProblemDetails() {
   const [contestProblems, setContestProblems] = useState<ContestProblem[]>([]);
 
   const currentContestIndex = contestProblems.findIndex((p) => p.problem_id === problem?.problem_id);
-  const previousContestProblem = currentContestIndex > 0 ? contestProblems[currentContestIndex - 1] : null;
+  const prevContestProblem = currentContestIndex > 0
+    ? contestProblems[currentContestIndex - 1]
+    : null;
   const nextContestProblem = currentContestIndex >= 0 && currentContestIndex < contestProblems.length - 1
     ? contestProblems[currentContestIndex + 1]
     : null;
@@ -98,21 +87,37 @@ export default function ProblemDetails() {
     const pid = parseInt(id);
 
     const problemRequest = isContestMode ? fetchContestProblem(contestId, pid) : fetchProblemById(pid);
+    const submissionRequest = isAuthenticated && user
+      ? fetchSubmissions({ user_id: user.user_id, problem_id: pid, limit: 1 }).catch(() => null)
+      : Promise.resolve(null);
+
     Promise.all([
       problemRequest,
       isContestMode ? fetchContestProblems(contestId) : Promise.resolve([]),
       fetchTestCases(pid).catch(() => []),
-      fetchComments(pid).catch(() => [])
+      fetchComments(pid).catch(() => []),
+      submissionRequest
     ])
-      .then(([prob, contestProblemList, tc, comms]) => { 
+      .then(([prob, contestProblemList, tc, comms, latestSub]) => { 
         setProblem(prob); 
         setContestProblems(contestProblemList);
         setTestCases(tc); 
         setComments(comms);
+        
+        if (latestSub && latestSub.data && latestSub.data.length > 0) {
+          const sub = latestSub.data[0];
+          setCode(sub.code);
+          if (sub.language) {
+            setLanguage(sub.language);
+          }
+        } else {
+          // If no previous submission, reset editor code to empty to trigger standard template loading
+          setCode("");
+        }
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [id, contestId, isContestMode]);
+  }, [id, contestId, isContestMode, isAuthenticated, user]);
 
   useEffect(() => {
     if (!code || code === BOILERPLATE.cpp || code === BOILERPLATE.c || code === BOILERPLATE.java || code === BOILERPLATE.python || code === BOILERPLATE.javascript) {
@@ -179,11 +184,16 @@ export default function ProblemDetails() {
 
   const diffBadge = (d: string) => d === "EASY" ? "badge-easy" : d === "MEDIUM" ? "badge-medium" : "badge-hard";
 
+  // During a live exam, force contest-scoped problem access
+  if (activeContest && contestId !== activeContest.active_contest_id) {
+    return <Navigate to={`/problems/${id}?contest=${activeContest.active_contest_id}`} replace />;
+  }
+
   if (loading) return <div className="skeleton-block" style={{ height: 'calc(100vh - 72px)' }} />;
   if (error) return <div className="ide-warning">{error}</div>;
   if (!problem) return <div className="empty-state">Problem not found</div>;
 
-  return (
+  const workspaceView = (
     <div className={`workspace-layout ${isContestMode ? "contest-workspace" : ""}`}>
       {/* LEFT PANE */}
       <div className="workspace-left">
@@ -438,4 +448,33 @@ export default function ProblemDetails() {
       </div>
     </div>
   );
+
+  if (isContestMode) {
+    return (
+      <div className="workspace-outer-wrapper">
+        {workspaceView}
+        <div className="workspace-bottom-nav">
+          <button 
+            className="btn-bottom-prev" 
+            onClick={() => navigateToProblem(prevContestProblem)}
+            disabled={!prevContestProblem}
+          >
+            ← Previous Question
+          </button>
+          <span className="workspace-bottom-status">
+            Question {currentContestIndex + 1} of {contestProblems.length}
+          </span>
+          <button 
+            className="btn-bottom-next" 
+            onClick={() => navigateToProblem(nextContestProblem)}
+            disabled={!nextContestProblem}
+          >
+            Next Question →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return workspaceView;
 }

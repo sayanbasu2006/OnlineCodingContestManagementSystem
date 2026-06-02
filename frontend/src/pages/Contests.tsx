@@ -4,23 +4,11 @@ import { fetchContests, joinContest, fetchParticipations } from "../api/api";
 import { useAuth } from "../App";
 import { useToast } from "../components/Toast";
 import { motion } from "framer-motion";
+import TimeLeft from "../components/TimeLeft";
 
 interface Contest { contest_id: number; title: string; description: string; start_time: string; end_time: string; status: "UPCOMING" | "ONGOING" | "ENDED"; participant_count?: number; duration_minutes: number; }
 
-function TimeLeft({ targetTime, prefix = "" }: { targetTime: string; prefix?: string }) {
-  const [text, setText] = useState("");
-  useEffect(() => {
-    const update = () => {
-      const diff = new Date(targetTime).getTime() - Date.now();
-      if (diff <= 0) { setText("Ended"); return; }
-      const h = Math.floor(diff / 3600000); const m = Math.floor((diff % 3600000) / 60000);
-      if (h > 24) setText(`${prefix}${Math.floor(h / 24)}d ${h % 24}h`); else setText(`${prefix}${h}h ${m}m`);
-    };
-    update(); const id = setInterval(update, 60000); return () => clearInterval(id);
-  }, [targetTime, prefix]);
-  if (!text) return null;
-  return <span className="highlight-timer">{text}</span>;
-}
+
 
 export default function Contests() {
   const [contests, setContests] = useState<Contest[]>([]);
@@ -128,9 +116,9 @@ export default function Contests() {
                   </div>
                   <div className="meta-box timer-box">
                     <span className="meta-lbl">{isOngoing ? "Ends In" : isUpcoming ? "Starts In" : "Ended On"}</span>
-                    <span className="meta-val">
-                      {isEnded ? new Date(c.end_time).toLocaleDateString() : <TimeLeft targetTime={isOngoing ? c.end_time : c.start_time} />}
-                    </span>
+                    <div className="meta-value">
+                      {isEnded ? new Date(c.end_time).toLocaleDateString() : <TimeLeft targetTime={isOngoing ? c.end_time : c.start_time} className="highlight-timer" />}
+                    </div>
                   </div>
                 </div>
 

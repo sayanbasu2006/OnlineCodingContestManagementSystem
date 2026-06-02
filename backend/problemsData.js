@@ -1,0 +1,1053 @@
+const newProblems = [
+  // ─── 1. ARRAYS & HASHING (10 Questions) ───
+  {
+    title: "Contains Duplicate",
+    description: "Given an integer array nums, return true if any value appears at least twice in the array, and return false if every element is distinct.\n\nExample:\nInput: nums = [1,2,3,1]\nOutput: true",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nUse a Hash Set to track visited numbers. If a number has been seen, return true.\n\n### Complexity\n- **Time:** O(N)\n- **Space:** O(N)",
+    tags: ["Array", "Hash Table"],
+    testCases: [
+      { input: "1 2 3 1", expected_output: "true", is_sample: true },
+      { input: "1 2 3 4", expected_output: "false", is_sample: true },
+      { input: "1 1 2", expected_output: "true", is_sample: false }
+    ]
+  },
+  {
+    title: "Valid Anagram",
+    description: "Given two strings s and t, return true if t is an anagram of s, and false otherwise.\n\nExample:\nInput: s = \"anagram\", t = \"nagaram\"\nOutput: true",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nCount frequencies of characters in both strings. If they match, it is a valid anagram.\n\n### Complexity\n- **Time:** O(N)\n- **Space:** O(1) (since character set size is fixed at 26)",
+    tags: ["String", "Hash Table", "Sorting"],
+    testCases: [
+      { input: "anagram\nnagaram", expected_output: "true", is_sample: true },
+      { input: "rat\ncar", expected_output: "false", is_sample: true },
+      { input: "a\nb", expected_output: "false", is_sample: false }
+    ]
+  },
+  {
+    title: "Group Anagrams",
+    description: "Given an array of strings strs, group the anagrams together. You can return the answer in any order.\n\nExample:\nInput: strs = [\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"]\nOutput: [[\"bat\"],[\"nat\",\"tan\"],[\"ate\",\"eat\",\"tea\"]]",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nSort each string alphabetically and use it as a hash map key, grouping original strings as lists of values.\n\n### Complexity\n- **Time:** O(N * K log K) where K is max string length.\n- **Space:** O(N * K)",
+    tags: ["Array", "Hash Table", "String", "Sorting"],
+    testCases: [
+      { input: "eat tea tan ate nat bat", expected_output: "[[\"bat\"],[\"nat\",\"tan\"],[\"ate\",\"eat\",\"tea\"]]", is_sample: true },
+      { input: "a", expected_output: "[[\"a\"]]", is_sample: true }
+    ]
+  },
+  {
+    title: "Top K Frequent Elements",
+    description: "Given an integer array nums and an integer k, return the k most frequent elements. You may return the answer in any order.\n\nExample:\nInput: nums = [1,1,1,2,2,3], k = 2\nOutput: [1,2]",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nCount frequencies of elements. Use a bucket sort array where index represents frequency to retrieve top elements in linear time.\n\n### Complexity\n- **Time:** O(N)\n- **Space:** O(N)",
+    tags: ["Array", "Hash Table", "Heap", "Sorting", "Bucket Sort"],
+    testCases: [
+      { input: "1 1 1 2 2 3\n2", expected_output: "1 2", is_sample: true },
+      { input: "1\n1", expected_output: "1", is_sample: true }
+    ]
+  },
+  {
+    title: "Product of Array Except Self",
+    description: "Given an integer array nums, return an array answer such that answer[i] is equal to the product of all the elements of nums except nums[i].\n\nYou must write an algorithm that runs in O(n) time and without using the division operation.\n\nExample:\nInput: nums = [1,2,3,4]\nOutput: [24,12,8,6]",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nCalculate prefix products and suffix products. Combine them in a single array to achieve O(1) auxiliary space.\n\n### Complexity\n- **Time:** O(N)\n- **Space:** O(1)",
+    tags: ["Array", "Prefix Sum"],
+    testCases: [
+      { input: "1 2 3 4", expected_output: "24 12 8 6", is_sample: true },
+      { input: "-1 1 0 -3 3", expected_output: "0 0 9 0 0", is_sample: true }
+    ]
+  },
+  {
+    title: "Longest Consecutive Sequence",
+    description: "Given an unsorted array of integers nums, return the length of the longest consecutive elements sequence.\n\nYou must write an algorithm that runs in O(n) time.\n\nExample:\nInput: nums = [100,4,200,1,3,2]\nOutput: 4\nExplanation: The longest consecutive elements sequence is [1, 2, 3, 4]. Therefore its length is 4.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nInsert numbers into a Set. Iterate through numbers; if a number is the start of a sequence (i.e. `num - 1` is not in Set), count the sequence length upwards.\n\n### Complexity\n- **Time:** O(N)\n- **Space:** O(N)",
+    tags: ["Array", "Hash Table", "Union Find"],
+    testCases: [
+      { input: "100 4 200 1 3 2", expected_output: "4", is_sample: true },
+      { input: "0 3 7 2 5 8 4 6 0 1", expected_output: "9", is_sample: true }
+    ]
+  },
+  {
+    title: "Valid Sudoku",
+    description: "Determine if a 9 x 9 Sudoku board is valid. Only the filled cells must be validated according to the Sudoku rules: rows, columns, and 3x3 sub-boxes must not contain duplicate numbers 1-9.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nUse sets to store visited values for each row, column, and 3x3 sub-box. Check each element and report conflicts.",
+    tags: ["Array", "Hash Table", "Matrix"],
+    testCases: [
+      { input: "valid_sudoku_board_input", expected_output: "true", is_sample: true }
+    ]
+  },
+  {
+    title: "Encode and Decode Strings",
+    description: "Design an algorithm to encode a list of strings to a single string. The encoded string is then sent over the network and decoded back to the original list of strings.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nUse length-prefix encoding. Prepend the length of each string followed by a delimiter (e.g. `length + '#'`) to the string to safely partition them.",
+    tags: ["Array", "String"],
+    testCases: [
+      { input: "hello world", expected_output: "hello world", is_sample: true },
+      { input: "lint code love you", expected_output: "lint code love you", is_sample: true }
+    ]
+  },
+  {
+    title: "Subarray Sum Equals K",
+    description: "Given an array of integers nums and an integer k, return the total number of subarrays whose sum equals to k.\n\nExample:\nInput: nums = [1,1,1], k = 2\nOutput: 2",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nUse prefix sum cumulative counts stored in a hash map. For each prefix sum, check if `cumulativeSum - k` exists in the map.",
+    tags: ["Array", "Hash Table", "Prefix Sum"],
+    testCases: [
+      { input: "1 1 1\n2", expected_output: "2", is_sample: true },
+      { input: "1 2 3\n3", expected_output: "2", is_sample: true }
+    ]
+  },
+  {
+    title: "Sort Colors",
+    description: "Given an array nums with n objects colored red, white, or blue, sort them in-place so that objects of the same color are adjacent, with the colors in the order red, white, and blue.\n\nExample:\nInput: nums = [2,0,2,1,1,0]\nOutput: [0,0,1,1,2,2]",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nUse the Dutch National Flag algorithm with three pointers: low, mid, and high. Swap elements to partition 0s, 1s, and 2s.",
+    tags: ["Array", "Two Pointers", "Sorting"],
+    testCases: [
+      { input: "2 0 2 1 1 0", expected_output: "0 0 1 1 2 2", is_sample: true },
+      { input: "2 0 1", expected_output: "0 1 2", is_sample: true }
+    ]
+  },
+
+  // ─── 2. TWO POINTERS (10 Questions) ───
+  {
+    title: "Valid Palindrome",
+    description: "A phrase is a palindrome if, after converting all uppercase letters into lowercase letters and removing all non-alphanumeric characters, it reads the same forward and backward.\n\nExample:\nInput: s = \"A man, a plan, a canal: Panama\"\nOutput: true",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nUse two pointers at opposite ends of the string. Advance past non-alphanumeric characters and compare letters, ignoring case.\n\n### Complexity\n- **Time:** O(N)\n- **Space:** O(1)",
+    tags: ["Two Pointers", "String"],
+    testCases: [
+      { input: "A man, a plan, a canal: Panama", expected_output: "true", is_sample: true },
+      { input: "race a car", expected_output: "false", is_sample: true },
+      { input: " ", expected_output: "true", is_sample: false }
+    ]
+  },
+  {
+    title: "Two Sum II - Input Array Is Sorted",
+    description: "Given a 1-indexed array of integers numbers that is already sorted in non-decreasing order, find two numbers such that they add up to a specific target number.\n\nExample:\nInput: numbers = [2,7,11,15], target = 9\nOutput: [1,2]",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nUse two pointers: left at start, right at end. If sum is smaller than target, increment left. If larger, decrement right.",
+    tags: ["Array", "Two Pointers", "Binary Search"],
+    testCases: [
+      { input: "2 7 11 15\n9", expected_output: "1 2", is_sample: true },
+      { input: "2 3 4\n6", expected_output: "1 3", is_sample: true }
+    ]
+  },
+  {
+    title: "3Sum",
+    description: "Given an integer array nums, return all the triplets [nums[i], nums[j], nums[k]] such that i != j, i != k, and j != k, and nums[i] + nums[j] + nums[k] == 0.\n\nExample:\nInput: nums = [-1,0,1,2,-1,-4]\nOutput: [[-1,-1,2],[-1,0,1]]",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nSort the array first. Iterate through elements; for each element, run a two-pointer search on the remaining suffix to find pairs that sum to its negation. Skip duplicate numbers.",
+    tags: ["Array", "Two Pointers", "Sorting"],
+    testCases: [
+      { input: "-1 0 1 2 -1 -4", expected_output: "[[-1,-1,2],[-1,0,1]]", is_sample: true },
+      { input: "0 1 1", expected_output: "[]", is_sample: true }
+    ]
+  },
+  {
+    title: "4Sum",
+    description: "Given an array nums of n integers, return an array of all the unique quadruplets [nums[a], nums[b], nums[c], nums[d]] such that the elements sum up to target.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nSort the array. Fix the first two numbers using nested loops, then use the two-pointer technique on the remaining array suffix to find the remaining two numbers.",
+    tags: ["Array", "Two Pointers", "Sorting"],
+    testCases: [
+      { input: "1 0 -1 0 -2 2\n0", expected_output: "[[-2,-1,1,2],[-2,0,0,2],[-1,0,0,1]]", is_sample: true }
+    ]
+  },
+  {
+    title: "Move Zeroes",
+    description: "Given an integer array nums, move all 0's to the end of it while maintaining the relative order of the non-zero elements in-place.\n\nExample:\nInput: nums = [0,1,0,3,12]\nOutput: [1,3,12,0,0]",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nUse a slow-runner pointer tracking where the next non-zero element should go. Swapping elements as we encounter non-zero values maintains the correct in-place order.",
+    tags: ["Array", "Two Pointers"],
+    testCases: [
+      { input: "0 1 0 3 12", expected_output: "1 3 12 0 0", is_sample: true },
+      { input: "0", expected_output: "0", is_sample: true }
+    ]
+  },
+  {
+    title: "Remove Duplicates from Sorted Array",
+    description: "Given an integer array nums sorted in non-decreasing order, remove the duplicates in-place such that each unique element appears only once. Return the number of unique elements.",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nSince array is sorted, keep a pointer for unique insertions. Advance the explorer; whenever a number differs from unique cursor, increment cursor and swap.",
+    tags: ["Array", "Two Pointers"],
+    testCases: [
+      { input: "1 1 2", expected_output: "2", is_sample: true },
+      { input: "0 0 1 1 1 2 2 3 3 4", expected_output: "5", is_sample: true }
+    ]
+  },
+  {
+    title: "Squares of a Sorted Array",
+    description: "Given an integer array nums sorted in non-decreasing order, return an array of the squares of each number sorted in non-decreasing order.",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nUse two pointers at opposite ends of the array. Compare squared values; insert the larger square at the end of the result array and move pointer inward.",
+    tags: ["Array", "Two Pointers", "Sorting"],
+    testCases: [
+      { input: "-4 -1 0 3 10", expected_output: "0 1 9 16 100", is_sample: true }
+    ]
+  },
+  {
+    title: "Valid Palindrome II",
+    description: "Given a string s, return true if the s can be palindrome after deleting at most one character from it.",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nCompare characters using two pointers. If there is a mismatch, check if deleting either character yields a valid substring palindrome.",
+    tags: ["Two Pointers", "String"],
+    testCases: [
+      { input: "aba", expected_output: "true", is_sample: true },
+      { input: "abca", expected_output: "true", is_sample: true },
+      { input: "abc", expected_output: "false", is_sample: false }
+    ]
+  },
+  {
+    title: "Backspace String Compare",
+    description: "Given two strings s and t, return true if they are equal when both are typed into empty text editors. '#' means a backspace character.",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nIterate from right to left using pointers. Skip characters as dictated by '#' count. Compare active elements step-by-step.",
+    tags: ["Two Pointers", "String", "Stack", "Simulation"],
+    testCases: [
+      { input: "ab#c\nad#c", expected_output: "true", is_sample: true },
+      { input: "a#c\nb", expected_output: "false", is_sample: true }
+    ]
+  },
+  {
+    title: "Partition Labels",
+    description: "You are given a string s. We want to partition the string into as many parts as possible so that each letter appears in at most one part. Return a list of integers representing the size of these parts.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nPrecompute the last occurrence index of each character. Loop through characters, shifting partition boundaries to match the maximum last-index encountered.",
+    tags: ["Hash Table", "Two Pointers", "String", "Greedy"],
+    testCases: [
+      { input: "ababcbacadefegdehijhklij", expected_output: "9 7 8", is_sample: true }
+    ]
+  },
+
+  // ─── 3. SLIDING WINDOW (10 Questions) ───
+  {
+    title: "Best Time to Buy and Sell Stock",
+    description: "You are given an array prices where prices[i] is the price of a given stock on the ith day. Return the maximum profit you can achieve.\n\nExample:\nInput: prices = [7,1,5,3,6,4]\nOutput: 5",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nTrack the minimum price seen so far. For each price, calculate profit relative to the minimum and update max profit.\n\n### Complexity\n- **Time:** O(N)\n- **Space:** O(1)",
+    tags: ["Array", "Dynamic Programming"],
+    testCases: [
+      { input: "7 1 5 3 6 4", expected_output: "5", is_sample: true },
+      { input: "7 6 4 3 1", expected_output: "0", is_sample: true }
+    ]
+  },
+  {
+    title: "Longest Repeating Character Replacement",
+    description: "You are given a string s and an integer k. You can choose any character of the string and change it to any other uppercase English character. Return the length of the longest substring containing the same letter you can get after performing at most k operations.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nUse a sliding window. Track frequency of characters inside the window. If `windowLength - maxFreq > k`, contract window from the left.",
+    tags: ["Hash Table", "String", "Sliding Window"],
+    testCases: [
+      { input: "ABAB\n2", expected_output: "4", is_sample: true },
+      { input: "AABABBA\n1", expected_output: "4", is_sample: true }
+    ]
+  },
+  {
+    title: "Permutation in String",
+    description: "Given two strings s1 and s2, return true if s2 contains a permutation of s1, or false otherwise.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nUse a sliding window matching the length of `s1`. Track character counts of both `s1` and the active window in `s2`. Compare arrays.",
+    tags: ["Hash Table", "Two Pointers", "String", "Sliding Window"],
+    testCases: [
+      { input: "ab\neidbaooo", expected_output: "true", is_sample: true },
+      { input: "ab\neidboaoo", expected_output: "false", is_sample: true }
+    ]
+  },
+  {
+    title: "Minimum Window Substring",
+    description: "Given two strings s and t of lengths m and n respectively, return the minimum window substring of s such that every character in t (including duplicates) is included in the window.",
+    difficulty: "HARD",
+    max_score: 300,
+    editorial: "### Intuition\nUse sliding window with two pointers. Expand right until window is valid (has all characters of t). Then contract left to find the minimal index range.",
+    tags: ["Hash Table", "String", "Sliding Window"],
+    testCases: [
+      { input: "ADOBECODEBANC\nABC", expected_output: "BANC", is_sample: true }
+    ]
+  },
+  {
+    title: "Sliding Window Maximum",
+    description: "You are given an array of integers nums, there is a sliding window of size k which is moving from the very left of the array to the very right. Return the max sliding window.",
+    difficulty: "HARD",
+    max_score: 300,
+    editorial: "### Intuition\nUse a deque storing indices. Keep elements in deque in monotonically decreasing order. Pop from front when element falls outside window.",
+    tags: ["Array", "Queue", "Sliding Window", "Monotonic Queue", "Heap"],
+    testCases: [
+      { input: "1 3 -1 -3 5 3 6 7\n3", expected_output: "3 3 5 5 6 7", is_sample: true }
+    ]
+  },
+  {
+    title: "Find All Anagrams in a String",
+    description: "Given two strings s and p, return an array of all the start indices of p's anagrams in s. You may return the answer in any order.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nUse a sliding window of size `p.length` on string `s`. Maintain arrays tracking counts, shifting window and comparing count states.",
+    tags: ["Hash Table", "String", "Sliding Window"],
+    testCases: [
+      { input: "cbaebabacd\nabc", expected_output: "0 6", is_sample: true }
+    ]
+  },
+  {
+    title: "Minimum Size Subarray Sum",
+    description: "Given an array of positive integers nums and a positive integer target, return the minimal length of a subarray whose sum is greater than or equal to target.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nSliding window. Expand right. As soon as current sum >= target, update minimal length and increment left index to shrink the window.",
+    tags: ["Array", "Two Pointers", "Binary Search", "Sliding Window"],
+    testCases: [
+      { input: "2 3 1 2 4 3\n7", expected_output: "2", is_sample: true }
+    ]
+  },
+  {
+    title: "Max Consecutive Ones III",
+    description: "Given a binary array nums and an integer k, return the maximum number of consecutive 1's in the array if you can flip at most k 0's.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nSliding window tracking the number of zeros in current frame. If zeros exceed `k`, shrink window from left until count is safe.",
+    tags: ["Array", "Binary Search", "Sliding Window", "Prefix Sum"],
+    testCases: [
+      { input: "1 1 1 0 0 0 1 1 1 1 0\n2", expected_output: "6", is_sample: true }
+    ]
+  },
+  {
+    title: "Fruit Into Baskets",
+    description: "You are visiting a farm that has a single row of fruit trees. You have two baskets, each basket can only hold a single type of fruit. Return the max fruits you can collect.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nThis is equivalent to finding the length of the longest subarray containing at most 2 distinct integers using sliding window.",
+    tags: ["Array", "Hash Table", "Sliding Window"],
+    testCases: [
+      { input: "1 2 1", expected_output: "3", is_sample: true },
+      { input: "0 1 2 2", expected_output: "3", is_sample: true }
+    ]
+  },
+  {
+    title: "Subarrays with K Different Integers",
+    description: "Given an integer array nums and an integer k, return the number of good subarrays of nums. A good subarray is one containing exactly k different integers.",
+    difficulty: "HARD",
+    max_score: 300,
+    editorial: "### Intuition\nCalculate the count of subarrays with at most k distinct integers, and subtract the count of subarrays with at most k - 1 distinct integers.",
+    tags: ["Array", "Hash Table", "Sliding Window"],
+    testCases: [
+      { input: "1 2 1 2 3\n2", expected_output: "7", is_sample: true }
+    ]
+  },
+
+  // ─── 4. STACK (10 Questions) ───
+  {
+    title: "Valid Parentheses",
+    description: "Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.\n\nExample:\nInput: s = \"()\"\nOutput: true",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nPush open brackets onto a Stack. When a closing bracket is seen, check if stack is not empty and matches the top element. Pop top bracket.\n\n### Complexity\n- **Time:** O(N)\n- **Space:** O(N)",
+    tags: ["String", "Stack"],
+    testCases: [
+      { input: "()", expected_output: "true", is_sample: true },
+      { input: "()[]{}", expected_output: "true", is_sample: true },
+      { input: "(]", expected_output: "false", is_sample: false }
+    ]
+  },
+  {
+    title: "Min Stack",
+    description: "Design a stack that supports push, pop, top, and retrieving the minimum element in constant time.\n\nMethods: push, pop, top, getMin.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nMaintain a secondary stack that stores the minimum element corresponding to each state of the primary stack.",
+    tags: ["Stack", "Design"],
+    testCases: [
+      { input: "push(-2) push(0) push(-3) getMin() pop() top() getMin()", expected_output: "-3 0 -2", is_sample: true }
+    ]
+  },
+  {
+    title: "Evaluate Reverse Polish Notation",
+    description: "Evaluate the value of an arithmetic expression in Reverse Polish Notation. Valid operators are +, -, *, and /.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nUse a stack. Loop through elements. If operand, push to stack. If operator, pop two elements, evaluate, and push result back.",
+    tags: ["Array", "Math", "Stack"],
+    testCases: [
+      { input: "2 1 + 3 *", expected_output: "9", is_sample: true },
+      { input: "4 13 5 / +", expected_output: "6", is_sample: true }
+    ]
+  },
+  {
+    title: "Generate Parentheses",
+    description: "Given n pairs of parentheses, write a function to generate all combinations of well-formed parentheses.\n\nExample:\nInput: n = 3\nOutput: [\"((()))\",\"(()())\",\"(())()\",\"()(())\",\"()()()\"]",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nUse Backtracking/Recursion. Keep track of open and closed counts. Add open if open < n; add closed if closed < open.",
+    tags: ["String", "Dynamic Programming", "Backtracking"],
+    testCases: [
+      { input: "3", expected_output: "[\"((()))\",\"(()())\",\"(())()\",\"()(())\",\"()()()\"]", is_sample: true }
+    ]
+  },
+  {
+    title: "Daily Temperatures",
+    description: "Given an array of integers temperatures represents the daily temperatures, return an array answer such that answer[i] is the number of days you have to wait after the ith day to get a warmer temperature.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nUse a monotonic stack storing indices of temperatures. While current temperature is greater than top index temperature, pop and compute day index diffs.",
+    tags: ["Array", "Stack", "Monotonic Stack"],
+    testCases: [
+      { input: "73 74 75 71 69 72 76 73", expected_output: "1 1 4 2 1 1 0 0", is_sample: true }
+    ]
+  },
+  {
+    title: "Car Fleet",
+    description: "There are n cars at given positions moving towards a destination. Calculate how many fleets (groups of cars arriving together) will form.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nSort cars by position descending. Calculate destination arrival time for each car. Fleet counts increase when a trailing car arrives slower.",
+    tags: ["Array", "Stack", "Sorting", "Monotonic Stack"],
+    testCases: [
+      { input: "12\n10 8 0 5 3\n2 4 1 1 3", expected_output: "3", is_sample: true }
+    ]
+  },
+  {
+    title: "Largest Rectangle in Histogram",
+    description: "Given an array of integers heights representing the histogram's bar height where the width of each bar is 1, return the area of the largest rectangle in the histogram.",
+    difficulty: "HARD",
+    max_score: 300,
+    editorial: "### Intuition\nUse a monotonic increasing stack storing pairs of (index, height). Pop when encountering smaller heights, computing rectangles area limits.",
+    tags: ["Array", "Stack", "Monotonic Stack"],
+    testCases: [
+      { input: "2 1 5 6 2 3", expected_output: "10", is_sample: true }
+    ]
+  },
+  {
+    title: "Implement Queue using Stacks",
+    description: "Implement a first in first out (FIFO) queue using only two stacks. The implemented queue should support push, pop, peek, and empty.",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nUse two stacks: input stack and output stack. Push to input. Pop from output; if output empty, move all from input to output.",
+    tags: ["Stack", "Design", "Queue"],
+    testCases: [
+      { input: "push(1) push(2) peek() pop() empty()", expected_output: "1 1 false", is_sample: true }
+    ]
+  },
+  {
+    title: "Simplify Path",
+    description: "Given an absolute path for a Unix-style file system, simplify it to the canonical path.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nSplit path by '/'. Iterate components: push directories to stack, pop for '..', skip for '.' or empty strings. Rebuild path.",
+    tags: ["String", "Stack"],
+    testCases: [
+      { input: "/home/", expected_output: "/home", is_sample: true },
+      { input: "/../", expected_output: "/", is_sample: true }
+    ]
+  },
+  {
+    title: "Asteroid Collision",
+    description: "We are given an array asteroids of integers representing asteroids in a row. Return the state of the asteroids after all collisions.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nUse stack. Push moving right (positive). When moving left (negative), resolve collisions on top of stack by comparing absolute sizes.",
+    tags: ["Array", "Stack"],
+    testCases: [
+      { input: "5 10 -5", expected_output: "5 10", is_sample: true },
+      { input: "8 -8", expected_output: "", is_sample: true }
+    ]
+  },
+
+  // ─── 5. BINARY SEARCH (10 Questions) ───
+  {
+    title: "Binary Search",
+    description: "Given an array of integers nums which is sorted in ascending order, and an integer target, write a function to search target in nums. If target exists, then return its index. Otherwise, return -1.\n\nExample:\nInput: nums = [-1,0,3,5,9,12], target = 9\nOutput: 4",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nSet left = 0, right = end. Compute mid. Shift pointers according to sorted conditions.\n\n### Complexity\n- **Time:** O(log N)\n- **Space:** O(1)",
+    tags: ["Array", "Binary Search"],
+    testCases: [
+      { input: "-1 0 3 5 9 12\n9", expected_output: "4", is_sample: true },
+      { input: "-1 0 3 5 9 12\n2", expected_output: "-1", is_sample: true }
+    ]
+  },
+  {
+    title: "Search a 2D Matrix",
+    description: "Write an efficient algorithm that searches for a value target in an m x n integer matrix. This matrix has rows sorted left-to-right and first integer of row is greater than last of previous.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nTreat the 2D matrix as a flat virtual 1D array. Perform standard binary search, transforming indices: `row = index / columns`, `col = index % columns`.",
+    tags: ["Array", "Binary Search", "Matrix"],
+    testCases: [
+      { input: "1 3 5 7\n10 11 16 20\n23 30 34 60\n3", expected_output: "true", is_sample: true }
+    ]
+  },
+  {
+    title: "Koko Eating Bananas",
+    description: "Koko loves to eat bananas. There are n piles of bananas. Return the minimum integer k such that she can eat all the bananas within h hours.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nBinary search the answer space for speed k. The range is `[1, max(piles)]`. For each speed, calculate hours needed and binary search lower bounds.",
+    tags: ["Array", "Binary Search"],
+    testCases: [
+      { input: "3 6 7 11\n8", expected_output: "4", is_sample: true }
+    ]
+  },
+  {
+    title: "Find Minimum in Rotated Sorted Array",
+    description: "Suppose an array of length n sorted in ascending order is rotated between 1 and n times. Find the minimum element in this array.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nUse binary search. Compare mid element with right boundary. If `nums[mid] > nums[right]`, min lies on the right. Else min lies on left (including mid).",
+    tags: ["Array", "Binary Search"],
+    testCases: [
+      { input: "3 4 5 1 2", expected_output: "1", is_sample: true }
+    ]
+  },
+  {
+    title: "Search in Rotated Sorted Array",
+    description: "Given the array nums after rotation, and an integer target, return the index of target if it is in nums, or -1 if it is not.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nIn binary search, at least one half of the rotated array is always strictly sorted. Identify which half is sorted and adjust bounds.",
+    tags: ["Array", "Binary Search"],
+    testCases: [
+      { input: "4 5 6 7 0 1 2\n0", expected_output: "4", is_sample: true }
+    ]
+  },
+  {
+    title: "Time Based Key-Value Store",
+    description: "Design a time-based key-value data structure that can store multiple values for the same key at different time stamps and retrieve the key's value at a certain timestamp.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nStore values inside a hash map mapping keys to lists of (value, timestamp) pairs. Binary search the list to find the largest timestamp <= target.",
+    tags: ["Hash Table", "String", "Binary Search", "Design"],
+    testCases: [
+      { input: "set(\"foo\",\"bar\",1) get(\"foo\",1) get(\"foo\",3) set(\"foo\",\"bar2\",4) get(\"foo\",4)", expected_output: "bar bar bar2", is_sample: true }
+    ]
+  },
+  {
+    title: "First Bad Version",
+    description: "You are a product manager and currently leading a team to develop a new product. Find the first bad version that causes all subsequent versions to be bad.",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nBinary search search space `[1, n]`. Call `isBadVersion(mid)`. If true, bad starts at or before mid, shrink right bound. Else search right.",
+    tags: ["Binary Search", "Interactive"],
+    testCases: [
+      { input: "5\n4", expected_output: "4", is_sample: true }
+    ]
+  },
+  {
+    title: "Search Insert Position",
+    description: "Given a sorted array of distinct integers and a target value, return the index if the target is found. If not, return the index where it would be if it were inserted in order.",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nStandard binary search. If target not found, left pointer points to the correct insert position index upon binary exit loop.",
+    tags: ["Array", "Binary Search"],
+    testCases: [
+      { input: "1 3 5 6\n5", expected_output: "2", is_sample: true },
+      { input: "1 3 5 6\n2", expected_output: "1", is_sample: true }
+    ]
+  },
+  {
+    title: "Peak Index in a Mountain Array",
+    description: "An array arr is a mountain array if it strictly increases to peak and then strictly decreases. Return the peak index.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nUse binary search. Compare `arr[mid]` with `arr[mid+1]`. If `arr[mid] < arr[mid+1]`, peak is on the right, else peak is left.",
+    tags: ["Array", "Binary Search"],
+    testCases: [
+      { input: "0 1 0", expected_output: "1", is_sample: true },
+      { input: "0 2 1 0", expected_output: "1", is_sample: true }
+    ]
+  },
+  {
+    title: "Find First and Last Position of Element in Sorted Array",
+    description: "Given an array of integers nums sorted in non-decreasing order, find the starting and ending position of a given target value.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nPerform two binary searches: one searching for target's left boundary index, and one searching for target's right boundary index.",
+    tags: ["Array", "Binary Search"],
+    testCases: [
+      { input: "5 7 7 8 8 10\n8", expected_output: "3 4", is_sample: true }
+    ]
+  },
+
+  // ─── 6. LINKED LIST (10 Questions) ───
+  {
+    title: "Reverse Linked List",
+    description: "Given the head of a singly linked list, reverse the list, and return the reversed list.\n\nExample:\nInput: head = [1,2,3,4,5]\nOutput: [5,4,3,2,1]",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nUse three pointers: prev, curr, and next. In a loop, point curr.next to prev, then advance prev and curr forward.\n\n### Complexity\n- **Time:** O(N)\n- **Space:** O(1)",
+    tags: ["Linked List", "Recursion"],
+    testCases: [
+      { input: "1 2 3 4 5", expected_output: "5 4 3 2 1", is_sample: true },
+      { input: "1 2", expected_output: "2 1", is_sample: true }
+    ]
+  },
+  {
+    title: "Merge Two Sorted Lists",
+    description: "You are given the heads of two sorted linked lists list1 and list2. Merge the two lists in a one sorted list.",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nUse a dummy node to start the merged list. Iterate through lists with pointers, appending smaller value node and advancing that list pointer.",
+    tags: ["Linked List", "Recursion"],
+    testCases: [
+      { input: "1 2 4\n1 3 4", expected_output: "1 1 2 3 4 4", is_sample: true }
+    ]
+  },
+  {
+    title: "Reorder List",
+    description: "You are given the head of a singly linked list. Reorder the list in layout L0 → Ln → L1 → Ln-1 → L2 → Ln-2 ...",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\n1. Find mid of linked list using fast/slow pointers.\n2. Reverse second half.\n3. Merge both halves by alternate nodes.",
+    tags: ["Two Pointers", "Linked List", "Stack"],
+    testCases: [
+      { input: "1 2 3 4", expected_output: "1 4 2 3", is_sample: true }
+    ]
+  },
+  {
+    title: "Remove Nth Node From End of List",
+    description: "Given the head of a linked list, remove the nth node from the end of the list and return its head.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nUse two pointers. Position right pointer `n` steps ahead of left pointer. Advance both together; when right hits end, left points to target parent.",
+    tags: ["Linked List", "Two Pointers"],
+    testCases: [
+      { input: "1 2 3 4 5\n2", expected_output: "1 2 3 5", is_sample: true }
+    ]
+  },
+  {
+    title: "Copy List with Random Pointer",
+    description: "A linked list of length n is given such that each node contains an additional random pointer. Construct a deep copy of the list.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nIterate through list, copying nodes and inserting copy next to original node. Then copy random pointers. Finally separate nodes.",
+    tags: ["Hash Table", "Linked List"],
+    testCases: [
+      { input: "[[7,null],[13,0],[11,4],[10,2],[1,0]]", expected_output: "[[7,null],[13,0],[11,4],[10,2],[1,0]]", is_sample: true }
+    ]
+  },
+  {
+    title: "Add Two Numbers",
+    description: "You are given two non-empty linked lists representing two non-negative integers. The digits are stored in reverse order. Add the two numbers and return the sum as a linked list.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nSimulate primary school addition. Loop through lists, adding values and tracking carry. Construct new list with node digit values.",
+    tags: ["Linked List", "Math", "Recursion"],
+    testCases: [
+      { input: "2 4 3\n5 6 4", expected_output: "7 0 8", is_sample: true }
+    ]
+  },
+  {
+    title: "Linked List Cycle",
+    description: "Given head, the head of a linked list, determine if the linked list has a cycle in it.",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nFloyd's Cycle-Finding Algorithm (Tortoise and Hare). Fast moves 2 nodes, slow moves 1. If they meet, a cycle exists.",
+    tags: ["Linked List", "Hash Table", "Two Pointers"],
+    testCases: [
+      { input: "3 2 0 -4\n1", expected_output: "true", is_sample: true }
+    ]
+  },
+  {
+    title: "Linked List Cycle II",
+    description: "Given the head of a linked list, return the node where the cycle begins. If there is no cycle, return null.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nDetect intersection using tortoise and hare. Reset slow to head; advance both at 1 node speed. They will meet at cycle origin.",
+    tags: ["Hash Table", "Linked List", "Two Pointers"],
+    testCases: [
+      { input: "3 2 0 -4\n1", expected_output: "tail connects to node index 1", is_sample: true }
+    ]
+  },
+  {
+    title: "Merge k Sorted Lists",
+    description: "You are given an array of k linked-lists lists, each linked-list is sorted in ascending order. Merge all the linked-lists into one sorted linked-list.",
+    difficulty: "HARD",
+    max_score: 300,
+    editorial: "### Intuition\nUse a min-heap to store the head nodes of each linked-list. Repeatedly pop the minimal node, appending it and pushing its next.",
+    tags: ["Linked List", "Divide and Conquer", "Heap", "Merge Sort"],
+    testCases: [
+      { input: "1 4 5\n1 3 4\n2 6", expected_output: "1 1 2 3 4 4 5 6", is_sample: true }
+    ]
+  },
+  {
+    title: "Reverse Nodes in k-Group",
+    description: "Given the head of a linked list, reverse the nodes of the list k at a time, and return the modified list.",
+    difficulty: "HARD",
+    max_score: 300,
+    editorial: "### Intuition\nValidate if k nodes exist. Reverse subsegment of k nodes. Recursively call reverse on remaining list, connecting tail to result.",
+    tags: ["Linked List", "Recursion"],
+    testCases: [
+      { input: "1 2 3 4 5\n2", expected_output: "2 1 4 3 5", is_sample: true }
+    ]
+  },
+
+  // ─── 7. TREES (10 Questions) ───
+  {
+    title: "Invert Binary Tree",
+    description: "Given the root of a binary tree, invert the tree, and return its root.\n\nExample:\nInput: root = [4,2,7,1,3,6,9]\nOutput: [4,7,2,9,6,3,1]",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nRecursively swap left and right children for every node in the tree.\n\n### Complexity\n- **Time:** O(N)\n- **Space:** O(H) (call stack size equals tree height)",
+    tags: ["Tree", "Depth-First Search", "Breadth-First Search", "Binary Tree"],
+    testCases: [
+      { input: "4 2 7 1 3 6 9", expected_output: "4 7 2 9 6 3 1", is_sample: true },
+      { input: "2 1 3", expected_output: "2 3 1", is_sample: true }
+    ]
+  },
+  {
+    title: "Maximum Depth of Binary Tree",
+    description: "Given the root of a binary tree, return its maximum depth.\n\nExample:\nInput: root = [3,9,20,null,null,15,7]\nOutput: 3",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nUse recursion: `maxDepth(root) = 1 + max(maxDepth(left), maxDepth(right))` with base case `0` for null nodes.",
+    tags: ["Tree", "Depth-First Search", "Breadth-First Search", "Binary Tree"],
+    testCases: [
+      { input: "3 9 20 null null 15 7", expected_output: "3", is_sample: true }
+    ]
+  },
+  {
+    title: "Diameter of Binary Tree",
+    description: "Given the root of a binary tree, return the length of the diameter of the tree. The diameter of a binary tree is the length of the longest path between any two nodes in a tree.",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nFor each node, compute tree heights. The diameter crossing current node is `leftHeight + rightHeight`. Keep running max tracks.",
+    tags: ["Tree", "Depth-First Search", "Binary Tree"],
+    testCases: [
+      { input: "1 2 3 4 5", expected_output: "3", is_sample: true }
+    ]
+  },
+  {
+    title: "Balanced Binary Tree",
+    description: "Given a binary tree, determine if it is height-balanced (height difference of left and right subtrees <= 1 for all nodes).",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nRecursively check heights. If any child is unbalanced, return -1. Height calculation fails early if differences > 1.",
+    tags: ["Tree", "Depth-First Search", "Binary Tree"],
+    testCases: [
+      { input: "3 9 20 null null 15 7", expected_output: "true", is_sample: true }
+    ]
+  },
+  {
+    title: "Same Tree",
+    description: "Given the roots of two binary trees p and q, write a function to check if they are the same or not.",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nBase cases: if both null, true; if one null or values differ, false. Recursively check p.left == q.left and p.right == q.right.",
+    tags: ["Tree", "Depth-First Search", "Breadth-First Search", "Binary Tree"],
+    testCases: [
+      { input: "1 2 3\n1 2 3", expected_output: "true", is_sample: true }
+    ]
+  },
+  {
+    title: "Subtree of Another Tree",
+    description: "Given the roots of two binary trees root and subRoot, return true if there is a subtree of root with the same structure and node values of subRoot.",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nFor every node in root, check if it matches subRoot exactly using `isSameTree(node, subRoot)`. Return true if any node matches.",
+    tags: ["Tree", "Depth-First Search", "String Matching", "Hash Function", "Binary Tree"],
+    testCases: [
+      { input: "3 4 5 1 2\n4 1 2", expected_output: "true", is_sample: true }
+    ]
+  },
+  {
+    title: "Lowest Common Ancestor of a Binary Search Tree",
+    description: "Given a binary search tree (BST), find the lowest common ancestor (LCA) node of two given nodes in the BST.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nUtilize BST properties. If both target nodes have values greater than root, LCA lies in right subtree. If smaller, left. Else, root is LCA.",
+    tags: ["Tree", "Depth-First Search", "Binary Search Tree", "Binary Tree"],
+    testCases: [
+      { input: "6 2 8 0 4 7 9 null null 3 5\n2\n8", expected_output: "6", is_sample: true }
+    ]
+  },
+  {
+    title: "Kth Smallest Element in a BST",
+    description: "Given the root of a binary search tree, and an integer k, return the kth smallest value (1-indexed) of all the values of the nodes in the tree.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nIn-order traversal of a BST visits nodes in strictly ascending order. Run an in-order traversal, count nodes, and stop at element k.",
+    tags: ["Tree", "Depth-First Search", "Binary Search Tree", "Binary Tree"],
+    testCases: [
+      { input: "3 1 4 null 2\n1", expected_output: "1", is_sample: true }
+    ]
+  },
+  {
+    title: "Validate Binary Search Tree",
+    description: "Given the root of a binary tree, determine if it is a valid binary search tree (BST).",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nRecursively pass minimum and maximum value bounds allowed for each subtree. Validate that every node fits strictly inside constraints.",
+    tags: ["Tree", "Depth-First Search", "Binary Search Tree", "Binary Tree"],
+    testCases: [
+      { input: "2 1 3", expected_output: "true", is_sample: true },
+      { input: "5 1 4 null null 3 6", expected_output: "false", is_sample: true }
+    ]
+  },
+  {
+    title: "Binary Tree Maximum Path Sum",
+    description: "A path in a binary tree is a sequence of nodes where each pair of adjacent nodes has an edge connecting them. Return the maximum path sum of any non-empty path.",
+    difficulty: "HARD",
+    max_score: 300,
+    editorial: "### Intuition\nFor each node, compute maximum single branch contribution. Running sum tracks path sums through root node: `node.val + leftBranch + rightBranch`.",
+    tags: ["Tree", "Depth-First Search", "Dynamic Programming", "Binary Tree"],
+    testCases: [
+      { input: "-10 9 20 null null 15 7", expected_output: "42", is_sample: true }
+    ]
+  },
+
+  // ─── 8. GRAPHS (10 Questions) ───
+  {
+    title: "Number of Islands",
+    description: "Given an m x n 2D binary grid grid which represents a map of '1's (land) and '0's (water), return the number of islands.\n\nExample:\nInput: grid = [\n  [\"1\",\"1\",\"1\",\"1\",\"0\"],\n  [\"1\",\"1\",\"0\",\"1\",\"0\"],\n  [\"1\",\"1\",\"0\",\"0\",\"0\"],\n  [\"0\",\"0\",\"0\",\"0\",\"0\"]\n]\nOutput: 1",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nIterate grid cells. When land ('1') is seen, run BFS/DFS to traverse all contiguous land and flip visited land to water ('0').\n\n### Complexity\n- **Time:** O(R * C)\n- **Space:** O(R * C) (call stack size in worst case)",
+    tags: ["Array", "Depth-First Search", "Breadth-First Search", "Union Find", "Matrix"],
+    testCases: [
+      { input: "grid_islands_input_data", expected_output: "1", is_sample: true }
+    ]
+  },
+  {
+    title: "Clone Graph",
+    description: "Given a reference of a node in a connected undirected graph. Return a deep copy (clone) of the graph.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nUse a hash map to map original nodes to their cloned counterparts. Run a BFS or DFS to traverse neighbors, creating and connecting copies.",
+    tags: ["Hash Table", "Depth-First Search", "Breadth-First Search", "Graph"],
+    testCases: [
+      { input: "[[2,4],[1,3],[2,4],[1,3]]", expected_output: "[[2,4],[1,3],[2,4],[1,3]]", is_sample: true }
+    ]
+  },
+  {
+    title: "Max Area of Island",
+    description: "You are given an m x n binary matrix grid. An island is a group of 1's. Return the maximum area of an island in the grid.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nUse DFS/BFS. Visit cells. When '1' is encountered, trigger DFS search sum, adding land cells and returning cumulative area.",
+    tags: ["Array", "Depth-First Search", "Breadth-First Search", "Union Find", "Matrix"],
+    testCases: [
+      { input: "grid_island_areas_data", expected_output: "6", is_sample: true }
+    ]
+  },
+  {
+    title: "Pacific Atlantic Water Flow",
+    description: "There is an m x n rectangular island. Find list of grid coordinates where water can flow to both Pacific and Atlantic oceans.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nPerform ocean-inward DFS/BFS traversals. Trace flow pathways upwards from Pacific borders, and then Atlantic borders. Intersects are candidates.",
+    tags: ["Array", "Depth-First Search", "Breadth-First Search", "Matrix"],
+    testCases: [
+      { input: "grid_elevations_data", expected_output: "[[0,4],[1,3],[1,4],[2,2],[3,0],[3,1],[4,0]]", is_sample: true }
+    ]
+  },
+  {
+    title: "Course Schedule",
+    description: "There are a total of numCourses courses you have to take, labeled from 0 to numCourses - 1. You are given prerequisites. Determine if you can finish all courses.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nThis is a cycle detection challenge in a directed graph. Use DFS graph coloring (visiting, visited) or topological sorting (Kahn's in-degree).",
+    tags: ["Depth-First Search", "Breadth-First Search", "Graph", "Topological Sort"],
+    testCases: [
+      { input: "2\n[[1,0]]", expected_output: "true", is_sample: true },
+      { input: "2\n[[1,0],[0,1]]", expected_output: "false", is_sample: true }
+    ]
+  },
+  {
+    title: "Course Schedule II",
+    description: "Given prerequisites courses relations, return the ordering of courses you should take to finish all courses. If impossible, return empty array.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nImplement Kahn's algorithm or DFS topological sort. Generate output sequence stack order when course in-degree falls to 0.",
+    tags: ["Depth-First Search", "Breadth-First Search", "Graph", "Topological Sort"],
+    testCases: [
+      { input: "4\n[[1,0],[2,0],[3,1],[3,2]]", expected_output: "0 1 2 3", is_sample: true }
+    ]
+  },
+  {
+    title: "Rotting Oranges",
+    description: "You are given an m x n grid where each cell represents an orange (empty, fresh, rotten). Return the minimum minutes elapsed until all fresh oranges rot.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nMulti-source BFS. Put all rotten oranges ('2') in queue. Expand outward level by level (minute count). Keep track of fresh count.",
+    tags: ["Array", "Breadth-First Search", "Matrix"],
+    testCases: [
+      { input: "2 1 1\n1 1 0\n0 1 1", expected_output: "4", is_sample: true }
+    ]
+  },
+  {
+    title: "Number of Connected Components in an Undirected Graph",
+    description: "Given n nodes and undirected edges, find the number of connected components in the graph.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nUse Union-Find data structure. Start with `n` components. For each edge, union the two nodes. Decrement component count upon successful union.",
+    tags: ["Depth-First Search", "Breadth-First Search", "Union Find", "Graph"],
+    testCases: [
+      { input: "5\n[[0,1],[1,2],[3,4]]", expected_output: "2", is_sample: true }
+    ]
+  },
+  {
+    title: "Graph Valid Tree",
+    description: "Given n nodes and list of undirected edges, determine if these edges make a valid tree.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nA valid tree has exactly `n - 1` edges and no cycles (all nodes connected). Verify edge count, then run DFS/BFS to trace reachability.",
+    tags: ["Depth-First Search", "Breadth-First Search", "Union Find", "Graph"],
+    testCases: [
+      { input: "5\n[[0,1],[0,2],[0,3],[1,4]]", expected_output: "true", is_sample: true }
+    ]
+  },
+  {
+    title: "Redundant Connection",
+    description: "In this problem, a tree is an undirected graph that is connected and has no cycles. Return an edge that can be removed so that the resulting graph is a tree.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nIterate through edges using Union-Find. If the two nodes of an edge are already connected in the same set, that edge creates a cycle and is redundant.",
+    tags: ["Depth-First Search", "Breadth-First Search", "Union Find", "Graph"],
+    testCases: [
+      { input: "[[1,2],[1,3],[2,3]]", expected_output: "2 3", is_sample: true }
+    ]
+  },
+
+  // ─── 9. DYNAMIC PROGRAMMING (10 Questions) ───
+  {
+    title: "Climbing Stairs",
+    description: "You are climbing a staircase. It takes n steps to reach the top. Each time you can either climb 1 or 2 steps. In how many distinct ways can you climb to the top?\n\nExample:\nInput: n = 2\nOutput: 2",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nThis is Fibonacci sequence problem. `ways(n) = ways(n-1) + ways(n-2)`. Space can be optimized to O(1).\n\n### Complexity\n- **Time:** O(N)\n- **Space:** O(1)",
+    tags: ["Math", "Dynamic Programming", "Memoization"],
+    testCases: [
+      { input: "2", expected_output: "2", is_sample: true },
+      { input: "3", expected_output: "3", is_sample: true },
+      { input: "5", expected_output: "8", is_sample: false }
+    ]
+  },
+  {
+    title: "Min Cost Climbing Stairs",
+    description: "You are given an integer array cost where cost[i] is the cost of ith step on a staircase. Return the minimum cost to reach the top.",
+    difficulty: "EASY",
+    max_score: 100,
+    editorial: "### Intuition\nIterate stairs bottom-up. For step `i`, `minCost[i] = cost[i] + min(minCost[i-1], minCost[i-2])`. Keep rolling parameters.",
+    tags: ["Array", "Dynamic Programming"],
+    testCases: [
+      { input: "10 15 20", expected_output: "15", is_sample: true }
+    ]
+  },
+  {
+    title: "House Robber",
+    description: "You are a professional robber planning to rob houses along a street. Each house has a certain amount of money stashed. Return the max money you can rob.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nFor each house, choose max profit: rob current house + two houses back, or skip current house and take previous house maximum.",
+    tags: ["Array", "Dynamic Programming"],
+    testCases: [
+      { input: "1 2 3 1", expected_output: "4", is_sample: true }
+    ]
+  },
+  {
+    title: "House Robber II",
+    description: "All houses at this place are arranged in a circle. That means the first house is the neighbor of the last one. Return the max money you can rob.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nSince first and last houses are connected, they cannot both be robbed. Run standard House Robber twice: once on `[0, n-2]` and once on `[1, n-1]`.",
+    tags: ["Array", "Dynamic Programming"],
+    testCases: [
+      { input: "2 3 2", expected_output: "3", is_sample: true }
+    ]
+  },
+  {
+    title: "Longest Palindromic Substring",
+    description: "Given a string s, return the longest palindromic substring in s.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nIterate through string. Treat each index (and pair indices) as center of a potential palindrome. Expand outward matching bounds.",
+    tags: ["String", "Dynamic Programming"],
+    testCases: [
+      { input: "babad", expected_output: "bab", is_sample: true }
+    ]
+  },
+  {
+    title: "Palindromic Substrings",
+    description: "Given a string s, return the number of palindromic substrings in it.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nUse center expansion technique. For each center index (both odd and even sizes), expand outward and count valid palindromes.",
+    tags: ["String", "Dynamic Programming"],
+    testCases: [
+      { input: "abc", expected_output: "3", is_sample: true },
+      { input: "aaa", expected_output: "6", is_sample: true }
+    ]
+  },
+  {
+    title: "Decode Ways",
+    description: "A message containing letters from A-Z can be encoded into numbers. Given a string s containing only digits, return the number of ways to decode it.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nUse dynamic programming. For index `i`, check single-digit decoding viability, and double-digit decoding compatibility. Sum solutions.",
+    tags: ["String", "Dynamic Programming"],
+    testCases: [
+      { input: "12", expected_output: "2", is_sample: true },
+      { input: "226", expected_output: "3", is_sample: true }
+    ]
+  },
+  {
+    title: "Coin Change",
+    description: "You are given an integer array coins representing coins of different denominations and an integer amount. Return the fewest coins needed to make up that amount.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nDynamic programming bottom-up. Create array `dp` of size `amount + 1` filled with `infinity`. `dp[i] = min(dp[i], 1 + dp[i - coin])` for each coin.",
+    tags: ["Array", "Dynamic Programming", "Breadth-First Search"],
+    testCases: [
+      { input: "1 2 5\n11", expected_output: "3", is_sample: true },
+      { input: "2\n3", expected_output: "-1", is_sample: true }
+    ]
+  },
+  {
+    title: "Maximum Subarray",
+    description: "Given an integer array nums, find the subarray with the largest sum, and return its sum.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nKadane's algorithm. Iterate numbers. Keep tracking current sum: `currentSum = max(num, currentSum + num)`. Keep tracks of max sum seen.",
+    tags: ["Array", "Divide and Conquer", "Dynamic Programming"],
+    testCases: [
+      { input: "-2 1 -3 4 -1 2 1 -5 4", expected_output: "6", is_sample: true }
+    ]
+  },
+  {
+    title: "Jump Game",
+    description: "You are given an integer array nums. You are initially positioned at the first index. Determine if you are able to reach the last index.",
+    difficulty: "MEDIUM",
+    max_score: 200,
+    editorial: "### Intuition\nGreedy approach. Iterate backwards from end index, tracking the goal index. If current index can reach goal, shift goal to current index.",
+    tags: ["Array", "Dynamic Programming", "Greedy"],
+    testCases: [
+      { input: "2 3 1 1 4", expected_output: "true", is_sample: true },
+      { input: "3 2 1 0 4", expected_output: "false", is_sample: true }
+    ]
+  }
+];
+
+module.exports = { newProblems };

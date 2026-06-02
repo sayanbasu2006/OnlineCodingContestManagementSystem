@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { fetchDashboardStats, fetchContests, fetchSubmissions, fetchLeaderboard } from "../api/api";
+import { fetchDashboardStats, fetchContests, fetchLeaderboard } from "../api/api";
 import { useAuth } from "../App";
+import TimeLeft from "../components/TimeLeft";
 
 interface DashboardStats {
   totalContests: number;
@@ -22,51 +23,21 @@ interface Contest {
   participant_count?: number;
 }
 
-interface Submission {
-  submission_id: number;
-  problem_title: string;
-  contest_title: string;
-  score: number;
-  language: string;
-  submission_time: string;
-}
+
 
 interface LeaderboardEntry {
   user_id: number;
   username: string;
-  score: number;
+  total_score: number;
 }
 
-function TimeLeft({ targetTime, prefix = "" }: { targetTime: string; prefix?: string }) {
-  const [text, setText] = useState("");
 
-  useEffect(() => {
-    const update = () => {
-      const diff = new Date(targetTime).getTime() - Date.now();
-      if (diff <= 0) { setText("Ended"); return; }
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      if (h > 24) {
-        setText(`${prefix}${Math.floor(h / 24)}d ${h % 24}h left`);
-      } else {
-        setText(`${prefix}${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`);
-      }
-    };
-    update();
-    const id = setInterval(update, 1000);
-    return () => clearInterval(id);
-  }, [targetTime, prefix]);
-
-  return <span>{text}</span>;
-}
 
 export default function Dashboard() {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [contests, setContests] = useState<Contest[]>([]);
-  const [, setSubmissions] = useState<Submission[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -77,18 +48,13 @@ export default function Dashboard() {
       fetchLeaderboard().catch(() => [])
     ];
 
-    if (isAuthenticated && user) {
-      promises.push(fetchSubmissions({ user_id: user.user_id }));
-    }
-
     Promise.all(promises)
-      .then(([statsData, contestsData, lbData, subsData]) => {
+      .then(([statsData, contestsData, lbData]) => {
         setStats(statsData);
         setContests(contestsData);
         setLeaderboard(Array.isArray(lbData) ? lbData.slice(0, 5) : []);
-        if (subsData) setSubmissions((subsData.data || subsData).slice(0, 5));
       })
-      .catch(() => {})
+      .catch((err) => console.error("Failed to load dashboard statistics/contests:", err))
       .finally(() => setLoading(false));
   }, [isAuthenticated, user]);
 
@@ -105,30 +71,30 @@ export default function Dashboard() {
       {/* Hero / Featured Contest Area */}
       <div className="dashboard-hero-grid">
         {featuredContest ? (
-          <motion.div className="featured-contest-card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <motion.div className="featured-contest-card premium-featured-card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <div className="featured-content">
-              <span className="featured-badge">{featuredContest.status === 'ONGOING' ? 'LIVE NOW' : 'UPCOMING'}</span>
+              <span className="featured-badge neon-teal-badge">{featuredContest.status === 'ONGOING' ? 'LIVE NOW' : 'UPCOMING'}</span>
               <h1 className="featured-title">{featuredContest.title}</h1>
               <p className="featured-desc">{featuredContest.description || "Compete against thousands of developers globally."}</p>
               
               <div className="featured-meta">
                 <div className="meta-item">
                   <span className="meta-label">Participants</span>
-                  <span className="meta-value">{featuredContest.participant_count || 0}</span>
+                  <span className="meta-value">👥 {featuredContest.participant_count || 0}</span>
                 </div>
                 <div className="meta-item">
                   <span className="meta-label">Duration</span>
-                  <span className="meta-value">{Math.floor(featuredContest.duration_minutes / 60)}h {featuredContest.duration_minutes % 60}m</span>
+                  <span className="meta-value">⏱️ {Math.floor(featuredContest.duration_minutes / 60)}h {featuredContest.duration_minutes % 60}m</span>
                 </div>
                 <div className="meta-item timer-item">
-                  <span className="meta-label">{featuredContest.status === 'ONGOING' ? 'Ends In' : 'Starts In'}</span>
+                  <span className="meta-label">{featuredContest.status === 'ONGOING' ? 'Ends in' : 'Starts in'}</span>
                   <span className="meta-value highlight-timer">
-                    <TimeLeft targetTime={featuredContest.status === 'ONGOING' ? featuredContest.end_time : featuredContest.start_time} />
+                    🕒 <TimeLeft targetTime={featuredContest.status === 'ONGOING' ? featuredContest.end_time : featuredContest.start_time} showSeconds={true} />
                   </span>
                 </div>
               </div>
 
-              <button className="btn-primary featured-btn" onClick={() => navigate(`/contests/${featuredContest.contest_id}`)}>
+              <button className="btn-primary featured-btn glow-button" onClick={() => navigate(`/contests/${featuredContest.contest_id}`)}>
                 {featuredContest.status === 'ONGOING' ? 'Enter Arena' : 'View Details'}
               </button>
             </div>
@@ -150,20 +116,26 @@ export default function Dashboard() {
 
         <div className="dashboard-side-grid">
           {secondaryContest && (
-            <motion.div className="side-card secondary-contest" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-              <h3 className="side-card-title">Also {secondaryContest.status === 'ONGOING' ? 'Active' : 'Upcoming'}</h3>
-              <h4 className="secondary-title">{secondaryContest.title}</h4>
-              <div className="secondary-meta">
-                <span><TimeLeft targetTime={secondaryContest.status === 'ONGOING' ? secondaryContest.end_time : secondaryContest.start_time} prefix={secondaryContest.status === 'ONGOING' ? 'Ends in ' : 'Starts in '} /></span>
-                <span>👥 {secondaryContest.participant_count || 0}</span>
+            <motion.div className="side-card current-challenges-card" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
+              <div className="side-card-header">
+                <h3 className="side-card-title">CURRENT CHALLENGES</h3>
               </div>
-              <button className="btn-secondary btn-sm full-width" onClick={() => navigate(`/contests/${secondaryContest.contest_id}`)}>View</button>
+              <div className="challenge-title-row">
+                <h4 className="secondary-title">{secondaryContest.title}</h4>
+                <span className="challenge-timer-badge">
+                  <TimeLeft targetTime={secondaryContest.status === 'ONGOING' ? secondaryContest.end_time : secondaryContest.start_time} showSeconds={true} />
+                </span>
+              </div>
+              <p className="challenge-desc">
+                {secondaryContest.description || "A fast-paced contest to test your analytical speed and skill accuracy."}
+              </p>
+              <button className="btn-challenge-view" onClick={() => navigate(`/contests/${secondaryContest.contest_id}`)}>View</button>
             </motion.div>
           )}
 
-          <motion.div className="side-card top-performers" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
+          <motion.div className="side-card global-leaderboard-card" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
             <div className="side-card-header">
-              <h3 className="side-card-title">Top Performers</h3>
+              <h3 className="side-card-title">GLOBAL LEADERBOARD</h3>
               <Link to="/leaderboard" className="view-all-link">View All</Link>
             </div>
             <div className="performer-list">
@@ -174,7 +146,7 @@ export default function Dashboard() {
                     <span className="performer-avatar">{user.username.charAt(0).toUpperCase()}</span>
                     <span className="performer-name">{user.username}</span>
                   </div>
-                  <span className="performer-score">{user.score}</span>
+                  <span className="performer-score">{user.total_score}</span>
                 </div>
               ))}
               {leaderboard.length === 0 && <span className="muted-text">No data yet.</span>}
@@ -189,7 +161,7 @@ export default function Dashboard() {
           <div className="stat-box">
             <div className="stat-icon-wrapper blue"><span className="icon">👥</span></div>
             <div className="stat-text">
-              <span className="stat-val">{stats.totalUsers * 100}+</span>
+              <span className="stat-val">{stats.totalUsers}</span>
               <span className="stat-lbl">Developers</span>
             </div>
           </div>
@@ -203,14 +175,14 @@ export default function Dashboard() {
           <div className="stat-box">
             <div className="stat-icon-wrapper green"><span className="icon">&lt;&gt;</span></div>
             <div className="stat-text">
-              <span className="stat-val">{stats.totalProblems * 10}+</span>
+              <span className="stat-val">{stats.totalProblems}</span>
               <span className="stat-lbl">Problems</span>
             </div>
           </div>
           <div className="stat-box">
             <div className="stat-icon-wrapper orange"><span className="icon">🚀</span></div>
             <div className="stat-text">
-              <span className="stat-val">{stats.totalSubmissions * 50}+</span>
+              <span className="stat-val">{stats.totalSubmissions}</span>
               <span className="stat-lbl">Submissions</span>
             </div>
           </div>

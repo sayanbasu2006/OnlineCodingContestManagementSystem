@@ -263,6 +263,33 @@ async function initializeDatabase() {
     `);
     console.log('  ✓ track_problems');
 
+    // ── TRACK_CONCEPTS table ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS track_concepts (
+        concept_id SERIAL PRIMARY KEY,
+        track_id INT NOT NULL,
+        title VARCHAR(100) NOT NULL,
+        content TEXT NOT NULL,
+        sequence_order INT NOT NULL,
+        FOREIGN KEY (track_id) REFERENCES learning_tracks(track_id) ON DELETE CASCADE
+      )
+    `);
+    console.log('  ✓ track_concepts');
+
+    // ── CONCEPT_PROBLEMS table ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS concept_problems (
+        concept_id INT NOT NULL,
+        problem_id INT NOT NULL,
+        sequence_order INT NOT NULL,
+        PRIMARY KEY (concept_id, problem_id),
+        FOREIGN KEY (concept_id) REFERENCES track_concepts(concept_id) ON DELETE CASCADE,
+        FOREIGN KEY (problem_id) REFERENCES problems(problem_id) ON DELETE CASCADE
+      )
+    `);
+    console.log('  ✓ concept_problems');
+
+
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_submissions_contest_user_problem_time
       ON submissions(contest_id, user_id, problem_id, submission_time DESC)

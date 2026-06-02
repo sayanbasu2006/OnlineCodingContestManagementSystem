@@ -35,7 +35,7 @@ export default function Profile() {
         setStats({ contestsJoined: participations.length, totalSubmissions: submissions.length, totalScore });
         setBadges(badgesData || []);
       }).catch(() => showToast("Failed to load profile", "error")).finally(() => setLoading(false));
-  }, [user]);
+  }, [user, showToast]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault(); setSavingProfile(true);

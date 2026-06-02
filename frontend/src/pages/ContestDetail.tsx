@@ -90,7 +90,7 @@ export default function ContestDetail() {
         const part = participations.find((p: any) => p.contest_id === cid);
         setParticipation(part || null);
       })
-      .catch(() => {})
+      .catch((err) => console.error("Failed to load contest detail data:", err))
       .finally(() => setLoading(false));
   }, [id, isAuthenticated, user?.user_id]);
 

@@ -8,6 +8,8 @@ interface Track {
   title: string;
   description: string;
   difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+  total_problems?: number;
+  solved_problems?: number;
 }
 
 export default function Tracks() {
@@ -21,102 +23,136 @@ export default function Tracks() {
       .finally(() => setLoading(false));
   }, []);
 
-  const getTrackStyling = (diff: string) => {
-    switch (diff) {
-      case "BEGINNER":
+  const getTrackMetadata = (title: string) => {
+    switch (title) {
+      case "Algorithms 101":
         return {
-          badge: "badge-easy",
+          estTime: "12 Hrs",
+          completed: 3,
+          total: 15,
+          prereq: "Basic coding",
           icon: "🌱",
-          gradient: "linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, var(--surface) 100%)",
-          borderColor: "rgba(34, 197, 94, 0.4)"
         };
-      case "INTERMEDIATE":
+      case "Data Structures Mastery":
         return {
-          badge: "badge-medium",
+          estTime: "20 Hrs",
+          completed: 0,
+          total: 18,
+          prereq: "Algorithms 101",
           icon: "🚀",
-          gradient: "linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, var(--surface) 100%)",
-          borderColor: "rgba(59, 130, 246, 0.4)"
         };
-      case "ADVANCED":
+      case "Advanced Graph Theory":
         return {
-          badge: "badge-hard",
+          estTime: "25 Hrs",
+          completed: 0,
+          total: 20,
+          prereq: "Data Structures Mastery",
           icon: "⚡",
-          gradient: "linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, var(--surface) 100%)",
-          borderColor: "rgba(239, 68, 68, 0.4)"
         };
       default:
         return {
-          badge: "badge-medium",
+          estTime: "10 Hrs",
+          completed: 0,
+          total: 10,
+          prereq: "None",
           icon: "📚",
-          gradient: "var(--surface)",
-          borderColor: "var(--border)"
         };
     }
   };
 
-  if (loading) return <div className="skeleton-block" style={{ height: '400px' }} />;
+  const getDifficultyClass = (diff: string) => {
+    switch (diff) {
+      case "BEGINNER":
+        return "beginner";
+      case "INTERMEDIATE":
+        return "intermediate";
+      case "ADVANCED":
+        return "advanced";
+      default:
+        return "intermediate";
+    }
+  };
+
+  if (loading) return <div className="skeleton-block" style={{ height: "400px" }} />;
 
   return (
-    <div className="tracks-page" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-      <div className="page-header" style={{ paddingBottom: '24px', borderBottom: '1px solid var(--border)' }}>
+    <div className="tracks-page" style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
+      <div className="page-header" style={{ paddingBottom: "24px", borderBottom: "1px solid var(--border)" }}>
         <div className="header-text">
-          <h1 className="hero-title">Learning Tracks</h1>
-          <p className="hero-subtitle">Follow a structured path to master algorithms and data structures.</p>
+          <h1 className="hero-title" style={{ fontSize: "2.5rem", fontWeight: 800, marginBottom: "8px" }}>Learning Tracks</h1>
+          <p className="hero-subtitle" style={{ color: "var(--muted)", fontSize: "1.1rem" }}>Follow a structured path to master algorithms and data structures.</p>
         </div>
       </div>
 
-      <div className="dashboard-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+      <div className="tracks-list-container">
         {tracks.length === 0 ? (
-          <div className="empty-state" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px', background: 'var(--surface-2)', borderRadius: '20px', border: '1px dashed var(--border)' }}>
+          <div className="empty-state" style={{ textAlign: "center", padding: "60px", background: "var(--surface-2)", borderRadius: "20px", border: "1px dashed var(--border)" }}>
             No tracks available yet.
           </div>
         ) : (
           tracks.map((track, idx) => {
-            const styling = getTrackStyling(track.difficulty);
+            const metadata = getTrackMetadata(track.title);
+            const diffClass = getDifficultyClass(track.difficulty);
+            
+            const totalProblems = track.total_problems !== undefined ? track.total_problems : metadata.total;
+            const solvedProblems = track.solved_problems !== undefined ? track.solved_problems : metadata.completed;
+            const completionPercent = totalProblems > 0 ? Math.round((solvedProblems / totalProblems) * 100) : 0;
+
             return (
               <motion.div
                 key={track.track_id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1 }}
-                className="dashboard-section"
-                style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  gap: '20px',
-                  background: styling.gradient,
-                  border: `1px solid ${styling.borderColor}`,
-                  borderRadius: '20px',
-                  padding: '28px',
-                  boxShadow: 'var(--shadow-sm)',
-                  transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-                }}
-                whileHover={{ transform: 'translateY(-4px)', boxShadow: 'var(--shadow)' }}
+                className={`track-row-card track-glow-${diffClass}`}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ 
-                    width: '48px', 
-                    height: '48px', 
-                    borderRadius: '12px', 
-                    background: 'var(--surface)', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    fontSize: '24px',
-                    border: '1px solid var(--border)',
-                    boxShadow: 'var(--shadow-sm)'
-                  }}>
-                    {styling.icon}
+                <div className="track-row-main">
+                  <div className="track-row-left">
+                    <div className={`track-icon-glow-wrapper track-icon-${diffClass}`}>
+                      {metadata.icon}
+                    </div>
+                    <div className="track-details-text">
+                      <h2 style={{ margin: "0 0 4px 0", fontSize: "1.4rem", fontWeight: 700, color: "var(--text)" }}>
+                        {track.title}
+                      </h2>
+                      <p style={{ color: "var(--muted)", margin: 0, lineHeight: 1.6, fontSize: "14.5px", maxWidth: "650px" }}>
+                        {track.description}
+                      </p>
+                    </div>
                   </div>
-                  <span className={`badge ${styling.badge}`}>{track.difficulty}</span>
-                </div>
-                
-                <div style={{ flex: 1 }}>
-                  <h2 style={{ margin: '0 0 8px 0', fontSize: '1.25rem', color: 'var(--text)' }}>{track.title}</h2>
-                  <p style={{ color: 'var(--muted)', margin: 0, lineHeight: 1.6, fontSize: '14px' }}>{track.description}</p>
+
+                  <div className="track-row-right">
+                    <span className={`badge badge-${diffClass === "beginner" ? "easy" : diffClass === "intermediate" ? "medium" : "hard"}`}>
+                      {track.difficulty}
+                    </span>
+                    
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", width: "100%", fontSize: "0.9rem" }}>
+                        <span className="track-metric-item">
+                          Est. Time: <span className="track-metric-highlight">{metadata.estTime}</span>
+                        </span>
+                        <span className="track-metric-item">
+                          <span className="track-metric-highlight">{solvedProblems}/{totalProblems}</span> modules
+                        </span>
+                      </div>
+
+                      <div className="track-progress-info">
+                        <div className="track-progress-bar-bg">
+                          <div
+                            className={`track-progress-bar-fill track-progress-fill-${diffClass}`}
+                            style={{ width: `${completionPercent}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div style={{ fontSize: "0.85rem", color: "var(--muted)" }}>
+                        Prerequisites: <span className="track-prereq-value">{metadata.prereq}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <Link to={`/tracks/${track.track_id}`} className="btn-primary" style={{ textAlign: 'center', marginTop: 'auto', width: '100%' }}>
+                <Link to={`/tracks/${track.track_id}`} className="track-btn-full">
                   Start Track →
                 </Link>
               </motion.div>

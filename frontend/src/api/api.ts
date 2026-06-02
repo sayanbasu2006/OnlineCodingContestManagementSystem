@@ -4,6 +4,8 @@ function handleAuthError(res: Response) {
   if (res.status === 401) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
     if (!window.location.pathname.startsWith('/login')) {
       window.location.href = '/login?expired=1';
     }
@@ -11,7 +13,7 @@ function handleAuthError(res: Response) {
 }
 
 function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
   return token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
 }
 
@@ -40,6 +42,12 @@ export const updateProfile = (data: { username?: string; email?: string }) =>
 
 export const changePassword = (currentPassword: string, newPassword: string) =>
   apiRequest(`${API_BASE}/auth/me/password`, { method: 'PUT', headers: getAuthHeaders(), body: JSON.stringify({ currentPassword, newPassword }) });
+
+export const forgotPassword = (email: string) =>
+  apiRequest(`${API_BASE}/auth/forgot-password`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+
+export const resetPassword = (data: any) =>
+  apiRequest(`${API_BASE}/auth/reset-password`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
 
 // ─── Dashboard ───
 export const fetchDashboardStats = () => apiRequest(`${API_BASE}/dashboard/stats`);
@@ -151,7 +159,7 @@ export const fetchUserBadges = (userId: number) =>
 
 
 export const fetchTracks = () =>
-  apiRequest(`${API_BASE}/tracks`);
+  apiRequest(`${API_BASE}/tracks`, { headers: getAuthHeaders() });
 
 export const fetchTrackById = (trackId: number) =>
   apiRequest(`${API_BASE}/tracks/${trackId}`);

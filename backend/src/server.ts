@@ -16,6 +16,7 @@ import exportRoutes from './routes/exportRoutes';
 
 import trackRoutes from './routes/trackRoutes';
 import aiRoutes from './routes/aiRoutes';
+import { rateLimiter } from './middleware/rateLimiter';
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use(cors({
     credentials: true
 }));
 app.use(express.json());
+app.use(rateLimiter);
 
 // Lazy database initialization middleware for serverless execution
 let isDbInitialized = false;

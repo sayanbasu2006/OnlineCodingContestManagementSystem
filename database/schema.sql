@@ -110,12 +110,29 @@ CREATE TABLE IF NOT EXISTS track_problems (
   PRIMARY KEY (track_id, problem_id)
 );
 
+-- Track Concepts Table
+CREATE TABLE IF NOT EXISTS track_concepts (
+  concept_id SERIAL PRIMARY KEY,
+  track_id INT NOT NULL REFERENCES learning_tracks(track_id) ON DELETE CASCADE,
+  title VARCHAR(100) NOT NULL,
+  content TEXT NOT NULL,
+  sequence_order INT NOT NULL
+);
+
+-- Concept Problems Junction Table
+CREATE TABLE IF NOT EXISTS concept_problems (
+  concept_id INT NOT NULL REFERENCES track_concepts(concept_id) ON DELETE CASCADE,
+  problem_id INT NOT NULL REFERENCES problems(problem_id) ON DELETE CASCADE,
+  sequence_order INT NOT NULL,
+  PRIMARY KEY (concept_id, problem_id)
+);
+
 -- User Badges Table
 CREATE TABLE IF NOT EXISTS user_badges (
   badge_id SERIAL PRIMARY KEY,
   user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
   badge_name VARCHAR(100) NOT NULL,
-  awarded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  earned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE (user_id, badge_name)
 );
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { fetchProblems } from "../api/api";
+import { useAuth } from "../App";
 
 interface Problem {
   problem_id: number;
@@ -15,6 +16,7 @@ export default function Problems() {
   const [problems, setProblems] = useState<Problem[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { activeContest } = useAuth();
 
   // Filters
   const [search, setSearch] = useState("");
@@ -46,6 +48,11 @@ export default function Problems() {
   }, [problems, search, diffFilter, tagFilter]);
 
   const diffBadge = (d: string) => d === "EASY" ? "badge-easy" : d === "MEDIUM" ? "badge-medium" : "badge-hard";
+
+  // During a live exam, block access to the global question bank
+  if (activeContest) {
+    return <Navigate to={`/contests/${activeContest.active_contest_id}`} replace />;
+  }
 
   if (loading) return <div className="skeleton-block" />;
 

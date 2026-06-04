@@ -86,6 +86,9 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
             username: user.username,
             email: user.email,
             role: user.role,
+            display_name: user.display_name,
+            bio: user.bio,
+            avatar_url: user.avatar_url,
             token
         });
     } catch (err: any) {
@@ -110,7 +113,7 @@ router.get('/users', protect, admin, async (req: Request, res: Response): Promis
 router.get('/me', protect, async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const result = await pool.query(
-            'SELECT user_id, username, email, role, created_at FROM users WHERE user_id = $1',
+            'SELECT user_id, username, email, role, created_at, display_name, bio, avatar_url FROM users WHERE user_id = $1',
             [req.user?.user_id]
         );
         const rows = result.rows;
@@ -124,9 +127,9 @@ router.get('/me', protect, async (req: AuthRequest, res: Response): Promise<void
 // Update profile
 router.put('/me', protect, async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        const { username, email } = req.body;
-        if (!username && !email) {
-            res.status(400).json({ error: 'At least username or email is required' });
+        const { username, email, display_name, bio, avatar_url } = req.body;
+        if (!username && !email && display_name === undefined && bio === undefined && avatar_url === undefined) {
+            res.status(400).json({ error: 'At least one field is required to update' });
             return;
         }
 
@@ -134,6 +137,9 @@ router.put('/me', protect, async (req: AuthRequest, res: Response): Promise<void
         const params: any[] = [];
         if (username) { params.push(username); updates.push(`username = $${params.length}`); }
         if (email) { params.push(email); updates.push(`email = $${params.length}`); }
+        if (display_name !== undefined) { params.push(display_name); updates.push(`display_name = $${params.length}`); }
+        if (bio !== undefined) { params.push(bio); updates.push(`bio = $${params.length}`); }
+        if (avatar_url !== undefined) { params.push(avatar_url); updates.push(`avatar_url = $${params.length}`); }
         
         params.push(req.user?.user_id);
         const userIdIndex = params.length;

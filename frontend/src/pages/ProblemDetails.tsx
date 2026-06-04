@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams, Navigate } from "react-router-dom";
 import { fetchProblemById, fetchTestCases, submitSolution, fetchContestProblem, fetchContestProblems, fetchSubmissions } from "../api/api";
-import { useAuth } from "../App";
+import { useAuth, useTheme } from "../App";
 import { useToast } from "../components/Toast";
 import { motion } from "framer-motion";
 import { LANGUAGE_MAP, BOILERPLATE } from "../constants/editor";
@@ -45,6 +45,7 @@ export default function ProblemDetails() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { isAuthenticated, activeContest, user } = useAuth();
+  const { theme } = useTheme();
   const { showToast } = useToast();
 
   const contestId = parseInt(searchParams.get("contest") || "0");
@@ -335,7 +336,7 @@ export default function ProblemDetails() {
               language={LANGUAGE_MAP[language] || "plaintext"}
               value={code}
               onChange={(val) => setCode(val || "")}
-              theme="vs-dark"
+              theme={theme === "dark" ? "vs-dark" : "light"}
               options={{
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: 14,

@@ -133,7 +133,7 @@ function OverviewTab() {
           <button className="btn-primary" onClick={() => handleExport("leaderboard/global", "global_leaderboard.csv")}>
             ⬇️ Export Global Leaderboard
           </button>
-          <button className="btn-outline" onClick={() => handleExport("submissions", "all_submissions.csv")}>
+          <button className="btn-secondary" onClick={() => handleExport("submissions", "all_submissions.csv")}>
             ⬇️ Export All Submissions
           </button>
         </div>

@@ -68,6 +68,12 @@ async function initializeDatabase() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+    await client.query(`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS display_name VARCHAR(100) NULL,
+      ADD COLUMN IF NOT EXISTS bio TEXT NULL,
+      ADD COLUMN IF NOT EXISTS avatar_url TEXT NULL
+    `);
     console.log('  ✓ users');
 
     // ── CONTEST table ──

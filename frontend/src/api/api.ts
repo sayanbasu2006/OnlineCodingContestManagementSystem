@@ -1,4 +1,4 @@
-export const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5001') + '/api';
+export const API_BASE = (import.meta.env.VITE_API_URL || '') + '/api';
 
 function handleAuthError(res: Response) {
   if (res.status === 401) {
@@ -37,7 +37,7 @@ export const loginUser = (email: string, password: string) =>
 export const getCurrentUser = () =>
   apiRequest(`${API_BASE}/auth/me`, { headers: getAuthHeaders() });
 
-export const updateProfile = (data: { username?: string; email?: string }) =>
+export const updateProfile = (data: { username?: string; email?: string; display_name?: string; bio?: string; avatar_url?: string }) =>
   apiRequest(`${API_BASE}/auth/me`, { method: 'PUT', headers: getAuthHeaders(), body: JSON.stringify(data) });
 
 export const changePassword = (currentPassword: string, newPassword: string) =>

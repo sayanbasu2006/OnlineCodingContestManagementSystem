@@ -203,7 +203,11 @@ function Layout({ children }: { children: React.ReactNode }) {
               {isAuthenticated ? (
                 <div className="user-menu-group">
                   <NavLink to="/profile" className="user-badge">
-                    <span className="user-avatar">{user?.username?.charAt(0).toUpperCase()}</span>
+                    {user?.avatar_url ? (
+                      <img src={user.avatar_url} alt="Profile" className="user-avatar-img" />
+                    ) : (
+                      <span className="user-avatar">{user?.username?.charAt(0).toUpperCase()}</span>
+                    )}
                     <span className="user-name-display">{user?.username}</span>
                   </NavLink>
                   <button onClick={handleLogout} className="btn-logout">Logout</button>

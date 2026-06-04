@@ -34,6 +34,9 @@ export default function Login() {
           username: data.username,
           email: data.email,
           role: data.role,
+          display_name: data.display_name,
+          bio: data.bio,
+          avatar_url: data.avatar_url,
         },
         data.token,
         rememberMe

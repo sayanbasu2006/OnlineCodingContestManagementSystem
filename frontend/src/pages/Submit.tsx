@@ -4,6 +4,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import Editor from "@monaco-editor/react";
 import { fetchContests, fetchContestProblems, fetchProblems, submitSolution, fetchParticipations } from "../api/api";
 import { useToast } from "../components/Toast";
+import { useTheme } from "../App";
 import { motion } from "framer-motion";
 import { LANGUAGE_MAP, BOILERPLATE } from "../constants/editor";
 
@@ -26,6 +27,7 @@ export default function Submit() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { theme } = useTheme();
   const [contests, setContests] = useState<Contest[]>([]);
   const [problems, setProblems] = useState<Problem[]>([]);
   const [, setParticipations] = useState<number[]>([]);
@@ -191,7 +193,7 @@ export default function Submit() {
                 language={LANGUAGE_MAP[language] || "plaintext"}
                 value={code}
                 onChange={(val) => setCode(val || "")}
-                theme="vs-dark" // Force dark theme for editor for premium feel
+                theme={theme === "dark" ? "vs-dark" : "light"}
                 options={{
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: 14,

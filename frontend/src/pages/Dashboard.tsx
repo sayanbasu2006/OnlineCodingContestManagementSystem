@@ -29,6 +29,7 @@ interface LeaderboardEntry {
   user_id: number;
   username: string;
   total_score: number;
+  avatar_url?: string;
 }
 
 
@@ -143,7 +144,11 @@ export default function Dashboard() {
                 <div key={user.user_id} className="performer-row">
                   <span className={`rank-badge rank-${idx + 1}`}>{idx + 1}</span>
                   <div className="performer-info">
-                    <span className="performer-avatar">{user.username.charAt(0).toUpperCase()}</span>
+                    {user.avatar_url ? (
+                      <img src={user.avatar_url} alt={user.username} className="performer-avatar" style={{ objectFit: 'cover' }} />
+                    ) : (
+                      <span className="performer-avatar">{user.username.charAt(0).toUpperCase()}</span>
+                    )}
                     <span className="performer-name">{user.username}</span>
                   </div>
                   <span className="performer-score">{user.total_score}</span>

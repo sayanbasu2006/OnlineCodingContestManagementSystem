@@ -1,12 +1,15 @@
 import { useState, createContext, useContext, useEffect } from "react";
 import type { ReactNode } from "react";
-import { fetchActiveParticipation } from "../api/api";
+import { fetchActiveParticipation, getCurrentUser } from "../api/api";
 
 export interface User {
   user_id: number;
   username: string;
   email: string;
   role: string;
+  display_name?: string;
+  bio?: string;
+  avatar_url?: string;
 }
 
 export interface ActiveContest {
@@ -51,6 +54,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setActiveContest(null);
     }
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (token) {
+      getCurrentUser()
+        .then((userData) => {
+          const isRemembered = !!localStorage.getItem("token");
+          const storage = isRemembered ? localStorage : sessionStorage;
+          storage.setItem("user", JSON.stringify(userData));
+          setUser(userData);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch user profile on load:", err);
+        });
+    }
+  }, []);
 
   useEffect(() => {
     refreshActiveContest();

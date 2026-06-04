@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { fetchLeaderboard, fetchContests } from "../api/api";
 import { useAuth } from "../App";
 
-interface LeaderboardEntry { rank: number; user_id: number; username: string; total_score: number; submissions: number; rating?: number; }
+interface LeaderboardEntry { rank: number; user_id: number; username: string; total_score: number; submissions: number; rating?: number; avatar_url?: string; }
 interface Contest { contest_id: number; title: string; status: string; }
 
 const getRatingBadge = (rating?: number) => {
@@ -75,7 +75,11 @@ export default function Leaderboard() {
           {top3[1] && (
             <motion.div className="podium-card silver" initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               <div className="podium-rank">2</div>
-              <div className="podium-avatar">{top3[1].username.charAt(0).toUpperCase()}</div>
+              {top3[1].avatar_url ? (
+                <img src={top3[1].avatar_url} alt={top3[1].username} className="podium-avatar" style={{ objectFit: 'cover' }} />
+              ) : (
+                <div className="podium-avatar">{top3[1].username.charAt(0).toUpperCase()}</div>
+              )}
               <h3 className="podium-name">{top3[1].username}</h3>
               <span className="podium-score">{top3[1].total_score} pts</span>
             </motion.div>
@@ -83,7 +87,11 @@ export default function Leaderboard() {
           {top3[0] && (
             <motion.div className="podium-card gold" initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }}>
               <div className="podium-rank">1</div>
-              <div className="podium-avatar">{top3[0].username.charAt(0).toUpperCase()}</div>
+              {top3[0].avatar_url ? (
+                <img src={top3[0].avatar_url} alt={top3[0].username} className="podium-avatar" style={{ objectFit: 'cover' }} />
+              ) : (
+                <div className="podium-avatar">{top3[0].username.charAt(0).toUpperCase()}</div>
+              )}
               <h3 className="podium-name">{top3[0].username}</h3>
               <span className="podium-score">{top3[0].total_score} pts</span>
             </motion.div>
@@ -91,7 +99,11 @@ export default function Leaderboard() {
           {top3[2] && (
             <motion.div className="podium-card bronze" initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
               <div className="podium-rank">3</div>
-              <div className="podium-avatar">{top3[2].username.charAt(0).toUpperCase()}</div>
+              {top3[2].avatar_url ? (
+                <img src={top3[2].avatar_url} alt={top3[2].username} className="podium-avatar" style={{ objectFit: 'cover' }} />
+              ) : (
+                <div className="podium-avatar">{top3[2].username.charAt(0).toUpperCase()}</div>
+              )}
               <h3 className="podium-name">{top3[2].username}</h3>
               <span className="podium-score">{top3[2].total_score} pts</span>
             </motion.div>
@@ -127,7 +139,11 @@ export default function Leaderboard() {
                   </td>
                   <td>
                     <div className="user-info-cell">
-                      <div className="performer-avatar sm">{entry.username.charAt(0).toUpperCase()}</div>
+                      {entry.avatar_url ? (
+                        <img src={entry.avatar_url} alt={entry.username} className="performer-avatar sm" style={{ objectFit: 'cover' }} />
+                      ) : (
+                        <div className="performer-avatar sm">{entry.username.charAt(0).toUpperCase()}</div>
+                      )}
                       <span className="font-semibold">{entry.username}</span>
                       {entry.user_id === user?.user_id && <span className="badge badge-ongoing">You</span>}
                     </div>

@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/', async (req: Request, res: Response): Promise<void> => {
     try {
         const result: any = await pool.query(
-            `SELECT u.user_id, u.username, u.rating, 
+            `SELECT u.user_id, u.username, u.rating, u.avatar_url,
                     COALESCE(SUM(max_scores.max_score), 0) AS total_score, 
                     COALESCE(SUM(max_scores.submissions_count), 0) AS submissions
              FROM users u
@@ -17,7 +17,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
                  FROM submissions
                  GROUP BY user_id, problem_id
              ) max_scores ON u.user_id = max_scores.user_id
-             GROUP BY u.user_id, u.username, u.rating
+             GROUP BY u.user_id, u.username, u.rating, u.avatar_url
              ORDER BY total_score DESC, u.rating DESC`
         );
         const rows = result.rows;
@@ -42,7 +42,7 @@ router.get('/:contestId', async (req: Request, res: Response): Promise<void> => 
         }
 
         const result: any = await pool.query(
-            `SELECT u.user_id, u.username, 
+            `SELECT u.user_id, u.username, u.avatar_url,
                     COALESCE(SUM(max_scores.max_score), 0) AS total_score, 
                     COALESCE(SUM(max_scores.submissions_count), 0) AS submissions
              FROM users u
@@ -52,7 +52,7 @@ router.get('/:contestId', async (req: Request, res: Response): Promise<void> => 
                  WHERE contest_id = $1
                  GROUP BY user_id, problem_id
              ) max_scores ON u.user_id = max_scores.user_id
-             GROUP BY u.user_id, u.username
+             GROUP BY u.user_id, u.username, u.avatar_url
              ORDER BY total_score DESC`,
             [req.params.contestId]
         );

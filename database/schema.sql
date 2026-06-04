@@ -9,6 +9,11 @@ CREATE TABLE IF NOT EXISTS users (
   password VARCHAR(255) NOT NULL,
   role VARCHAR(20) NOT NULL DEFAULT 'USER' CHECK (role IN ('ADMIN', 'USER')),
   rating INT DEFAULT 1500,
+  display_name VARCHAR(100) NULL,
+  bio TEXT NULL,
+  avatar_url TEXT NULL,
+  email_verified_at TIMESTAMP NULL,
+  last_login_at TIMESTAMP NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -136,6 +141,15 @@ CREATE TABLE IF NOT EXISTS user_badges (
   UNIQUE (user_id, badge_name)
 );
 
+-- Comments Table
+CREATE TABLE IF NOT EXISTS comments (
+  comment_id SERIAL PRIMARY KEY,
+  problem_id INT NOT NULL REFERENCES problems(problem_id) ON DELETE CASCADE,
+  user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE UNIQUE INDEX IF NOT EXISTS idx_contest_problems_sequence
   ON contest_problems(contest_id, sequence_order);
 
@@ -169,7 +183,7 @@ CREATE TABLE IF NOT EXISTS contest_problem_status (
 
 CREATE TABLE IF NOT EXISTS contest_sessions (
   session_id SERIAL PRIMARY KEY,
-  participation_id INT NOT NULL REFERENCES participations(participation_id) ON DELETE CASCADE,
+  participation_id INT NOT NULL REFERENCES participations(participation_id) ON DELETE CASCADE UNIQUE,
   server_started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   last_heartbeat_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   tab_switch_count INT NOT NULL DEFAULT 0,
@@ -194,3 +208,19 @@ CREATE TABLE IF NOT EXISTS leaderboard_snapshots (
   snapshot JSONB NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Indexes for performance and query optimization
+CREATE INDEX IF NOT EXISTS idx_comments_problem_user
+  ON comments(problem_id, user_id);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user_read
+  ON notifications(user_id, is_read);
+
+CREATE INDEX IF NOT EXISTS idx_submissions_user_id
+  ON submissions(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_submissions_problem_id
+  ON submissions(problem_id);
+
+CREATE INDEX IF NOT EXISTS idx_contest_sessions_participation
+  ON contest_sessions(participation_id);

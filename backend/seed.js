@@ -157,7 +157,7 @@ async function seed() {
         );
       }
     }
-    console.log('  ✓ 90 new LeetCode problems (with tags and test cases) inserted successfully!');
+    console.log(`  ✓ ${newProblems.length} new LeetCode problems (with tags and test cases) inserted successfully!`);
 
     // ── Contest-Problem mappings ──
     await client.query(`INSERT INTO contest_problems (contest_id, problem_id, sequence_order) VALUES (1, 1, 1)`);

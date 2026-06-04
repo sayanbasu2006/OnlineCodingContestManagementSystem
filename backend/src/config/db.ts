@@ -65,6 +65,11 @@ async function initializeDatabase() {
         password VARCHAR(255) NOT NULL,
         role user_role NOT NULL DEFAULT 'USER',
         rating INT DEFAULT 1500,
+        display_name VARCHAR(100) NULL,
+        bio TEXT NULL,
+        avatar_url TEXT NULL,
+        email_verified_at TIMESTAMPTZ NULL,
+        last_login_at TIMESTAMPTZ NULL,
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
@@ -72,7 +77,9 @@ async function initializeDatabase() {
       ALTER TABLE users
       ADD COLUMN IF NOT EXISTS display_name VARCHAR(100) NULL,
       ADD COLUMN IF NOT EXISTS bio TEXT NULL,
-      ADD COLUMN IF NOT EXISTS avatar_url TEXT NULL
+      ADD COLUMN IF NOT EXISTS avatar_url TEXT NULL,
+      ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ NULL,
+      ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ NULL
     `);
     console.log('  ✓ users');
 
@@ -296,6 +303,76 @@ async function initializeDatabase() {
     console.log('  ✓ concept_problems');
 
 
+    // ── CONTEST_ANNOUNCEMENTS table ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS contest_announcements (
+        announcement_id SERIAL PRIMARY KEY,
+        contest_id INT NOT NULL REFERENCES contests(contest_id) ON DELETE CASCADE,
+        title VARCHAR(160) NOT NULL,
+        body TEXT NOT NULL,
+        created_by INT REFERENCES users(user_id) ON DELETE SET NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    console.log('  ✓ contest_announcements');
+
+    // ── CONTEST_PROBLEM_STATUS table ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS contest_problem_status (
+        contest_id INT NOT NULL REFERENCES contests(contest_id) ON DELETE CASCADE,
+        problem_id INT NOT NULL REFERENCES problems(problem_id) ON DELETE CASCADE,
+        user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+        attempts INT NOT NULL DEFAULT 0,
+        best_score INT NOT NULL DEFAULT 0,
+        solved_at TIMESTAMPTZ NULL,
+        last_submission_id INT NULL REFERENCES submissions(submission_id) ON DELETE SET NULL,
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        PRIMARY KEY (contest_id, problem_id, user_id)
+      )
+    `);
+    console.log('  ✓ contest_problem_status');
+
+    // ── CONTEST_SESSIONS table ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS contest_sessions (
+        session_id SERIAL PRIMARY KEY,
+        participation_id INT NOT NULL REFERENCES participations(participation_id) ON DELETE CASCADE UNIQUE,
+        server_started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        last_heartbeat_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        tab_switch_count INT NOT NULL DEFAULT 0,
+        suspicious_event_count INT NOT NULL DEFAULT 0,
+        client_time_offset_ms INT DEFAULT 0
+      )
+    `);
+    console.log('  ✓ contest_sessions');
+
+    // ── CONTEST_PENALTIES table ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS contest_penalties (
+        penalty_id SERIAL PRIMARY KEY,
+        contest_id INT NOT NULL REFERENCES contests(contest_id) ON DELETE CASCADE,
+        user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+        problem_id INT REFERENCES problems(problem_id) ON DELETE CASCADE,
+        penalty_minutes INT NOT NULL DEFAULT 0,
+        reason TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    console.log('  ✓ contest_penalties');
+
+    // ── LEADERBOARD_SNAPSHOTS table ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS leaderboard_snapshots (
+        snapshot_id SERIAL PRIMARY KEY,
+        contest_id INT NOT NULL REFERENCES contests(contest_id) ON DELETE CASCADE,
+        frozen BOOLEAN NOT NULL DEFAULT FALSE,
+        snapshot JSONB NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    console.log('  ✓ leaderboard_snapshots');
+
+    // ── INDEXES ──
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_submissions_contest_user_problem_time
       ON submissions(contest_id, user_id, problem_id, submission_time DESC)
@@ -304,6 +381,27 @@ async function initializeDatabase() {
       CREATE INDEX IF NOT EXISTS idx_participations_user_contest_status
       ON participations(user_id, contest_id, status)
     `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_comments_problem_user
+      ON comments(problem_id, user_id)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_notifications_user_read
+      ON notifications(user_id, is_read)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_submissions_user_id
+      ON submissions(user_id)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_submissions_problem_id
+      ON submissions(problem_id)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_contest_sessions_participation
+      ON contest_sessions(participation_id)
+    `);
+    console.log('  ✓ indexes');
 
     console.log('\n🎉 All tables created successfully!');
   } catch (err: any) {

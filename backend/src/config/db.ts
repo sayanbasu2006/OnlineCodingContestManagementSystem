@@ -406,7 +406,7 @@ async function initializeDatabase() {
     console.log('\n🎉 All tables created successfully!');
   } catch (err: any) {
     console.error('❌ Database initialization failed:', err.message);
-    process.exit(1);
+    throw err;
   } finally {
     if (client) client.release();
   }
